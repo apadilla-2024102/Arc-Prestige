@@ -216,7 +216,3 @@ GET /reports/inscriptions
 ```
 
 ---
-
-# Autor
-
-Proyecto desarrollado como parte de un sistema de gestión para **clases de tiro con arco** utilizando arquitectura basada en microservicios.
