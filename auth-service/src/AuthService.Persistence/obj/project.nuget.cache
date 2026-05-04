@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "kjMnt2JSDAc=",
+  "dgSpecHash": "MUuQLaS7iZw=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Gahel\\Desktop\\BancoGP\\auth-service\\src\\AuthService.Persistence\\AuthService.Persistence.csproj",
+  "projectFilePath": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Persistence\\AuthService.Persistence.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Gahel\\.nuget\\packages\\bouncycastle.cryptography\\2.5.1\\bouncycastle.cryptography.2.5.1.nupkg.sha512",
     "C:\\Users\\Gahel\\.nuget\\packages\\cloudinarydotnet\\1.27.7\\cloudinarydotnet.1.27.7.nupkg.sha512",
