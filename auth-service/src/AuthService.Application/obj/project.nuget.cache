@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Jojvn64WeAk=",
+  "dgSpecHash": "u2QktZIfwVs=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Gahel\\Desktop\\BancoGP\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
+  "projectFilePath": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Gahel\\.nuget\\packages\\bouncycastle.cryptography\\2.5.1\\bouncycastle.cryptography.2.5.1.nupkg.sha512",
     "C:\\Users\\Gahel\\.nuget\\packages\\cloudinarydotnet\\1.27.7\\cloudinarydotnet.1.27.7.nupkg.sha512",
@@ -80,5 +80,18 @@
     "C:\\Users\\Gahel\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.24\\microsoft.windowsdesktop.app.ref.8.0.24.nupkg.sha512",
     "C:\\Users\\Gahel\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.24\\microsoft.aspnetcore.app.ref.8.0.24.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Package 'MailKit' 4.13.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr",
+      "projectPath": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
+      "libraryId": "MailKit",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
 }
