@@ -308,9 +308,19 @@ const App = () => {
         id: 'ID',
         name: 'Nombre',
         level: 'Nivel',
-        totalEnrolled: 'Inscritos',
+        totalEnrolled: 'Total inscritos',
+        newThisMonth: 'Nuevos este mes',
+        averageAge: 'Edad promedio',
+        topProgram: 'Programa principal',
+        totalClasses: 'Clases totales',
+        activeClasses: 'Clases activas',
+        occupancyRate: 'Tasa de ocupación',
+        bestRatedCoach: 'Mejor entrenador',
+        present: 'Presentes',
+        late: 'Tarde',
+        absent: 'Ausentes',
+        weeklyTrend: 'Tendencia semanal',
         capacity: 'Capacidad',
-        occupancyRate: 'Ocupación',
         status: 'Estado',
         studentName: 'Alumno',
         className: 'Clase',
@@ -318,6 +328,27 @@ const App = () => {
     }
 
     const labelFor = (k) => labelMap[k] || k
+
+    const renderObjectFields = (obj) => {
+        if (!obj || typeof obj !== 'object') return null
+        return (
+            <div className="cards-grid">
+                {Object.entries(obj).map(([k, v]) => (
+                    <div key={k} className="data-card">
+                        <div className="data-card-header">
+                            <h5>{labelFor(k)}</h5>
+                        </div>
+                        <div className="data-card-body">
+                            <div className="data-field">
+                                <div className="data-label">Valor</div>
+                                <div className="data-value">{renderCellValue(v)}</div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )
+    }
 
     useEffect(() => {
         const savedToken = localStorage.getItem('authToken')
@@ -803,13 +834,18 @@ const App = () => {
                                                         })}
                                                     </div>
                                                 )
+                                            ) : typeof serviceResult.data === 'object' && serviceResult.data !== null ? (
+                                                renderObjectFields(serviceResult.data)
                                             ) : (
                                                 <pre className="result-pre">{JSON.stringify(serviceResult.data, null, 2)}</pre>
                                             )}
                                         </div>
                                     )}
                                     {!serviceResult.success && !serviceResult.message && !serviceResult.data && (
-                                        <pre className="result-pre">{JSON.stringify(serviceResult, null, 2)}</pre>
+                                        <div>
+                                            <p><strong>Datos:</strong></p>
+                                            {renderObjectFields(serviceResult)}
+                                        </div>
                                     )}
                                 </div>
                             ) : (

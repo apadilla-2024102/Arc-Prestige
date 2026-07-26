@@ -239,27 +239,27 @@ export const fetchClassList = async () => {
 export const fetchReportClassStats = async () => {
   try {
     const result = await requestJson(getApiUrl('report-class.json'))
-    return result?.data || FIXED_RESPONSES.reportClass.data
+    return result?.data ? result : FIXED_RESPONSES.reportClass
   } catch (error) {
-    return FIXED_RESPONSES.reportClass.data
+    return FIXED_RESPONSES.reportClass
   }
 }
 
 export const fetchReportAttendance = async () => {
   try {
     const result = await requestJson(getApiUrl('report-attendance.json'))
-    return result?.data || FIXED_RESPONSES.reportAttendance.data
+    return result?.data ? result : FIXED_RESPONSES.reportAttendance
   } catch (error) {
-    return FIXED_RESPONSES.reportAttendance.data
+    return FIXED_RESPONSES.reportAttendance
   }
 }
 
 export const fetchEnrolledStudents = async () => {
   try {
     const result = await requestJson(getApiUrl('enrolled.json'))
-    return result?.data || FIXED_RESPONSES.enrolled.data
+    return result?.data ? result : FIXED_RESPONSES.enrolled
   } catch (error) {
-    return FIXED_RESPONSES.enrolled.data
+    return FIXED_RESPONSES.enrolled
   }
 }
 
