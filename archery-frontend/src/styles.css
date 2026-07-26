@@ -2,12 +2,23 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-x: hidden;
+}
+
 body {
     font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
     background: #f5f8f3;
     color: #233126;
     scroll-behavior: smooth;
     margin: 0;
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
 }
 
 .custom-navbar {
@@ -24,10 +35,21 @@ body {
 
 .navbar-brand {
     color: #fdfdfd;
-    font-size: 1.25rem;
+    font-size: 1.35rem;
     font-weight: 800;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.01em;
     text-decoration: none;
+}
+
+.brand-text {
+    display: inline-flex;
+    align-items: baseline;
+}
+
+.brand-light {
+    font-weight: 300;
+    opacity: 0.82;
+    margin-right: 4px;
 }
 
 .navbar-nav {
@@ -65,15 +87,15 @@ body {
 .navbar-icon {
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
     margin-right: 10px;
-    border-radius: 12px;
-    background: white;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffffff 0%, #eef7ea 100%);
     color: #1f5538;
     font-weight: 800;
     font-size: 0.9rem;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16), inset 0 0 0 1px rgba(15, 85, 56, 0.08);
 }
 
 .hero-content {
@@ -106,6 +128,10 @@ body {
     text-decoration: underline;
 }
  
+.custom-navbar {
+    position: relative;
+}
+
 .custom-navbar .container {
     display: flex;
     align-items: center;
@@ -123,19 +149,89 @@ body {
 .custom-navbar .navbar-nav .nav-link {
     padding: 0.5rem 0.65rem;
 }
- 
+
+/* ---------- Botón hamburguesa (solo visible en móvil) ---------- */
+.navbar-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 10px;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.navbar-toggle span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: #ffffff;
+    border-radius: 2px;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.navbar-toggle.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.navbar-toggle.is-open span:nth-child(2) { opacity: 0; }
+.navbar-toggle.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
 @media (max-width: 768px) {
+    .navbar-toggle {
+        display: flex;
+    }
+
     .custom-navbar .container {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 8px;
+        flex-wrap: nowrap;
+        justify-content: space-between;
     }
-    .custom-navbar .navbar-nav {
-        justify-content: center;
-    }
+
     .custom-navbar .navbar-brand {
+        width: auto;
+    }
+
+    /* Panel desplegable: oculto por defecto, se abre con .is-open */
+    .custom-navbar .navbar-nav {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 2px;
+        background: linear-gradient(180deg, #0f5538 0%, #123f2b 100%);
+        max-height: 0;
+        overflow: hidden;
+        padding: 0 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
+        transition: max-height 0.3s ease, padding 0.3s ease;
+        z-index: 50;
+    }
+
+    .custom-navbar .navbar-nav.is-open {
+        max-height: 400px;
+        padding: 10px 20px 22px;
+    }
+
+    .custom-navbar .navbar-nav .nav-item {
         width: 100%;
-        justify-content: center;
+    }
+
+    .custom-navbar .navbar-nav .nav-link {
+        display: block;
+        text-align: center;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .custom-navbar .navbar-nav .nav-item:last-child .nav-link {
+        border-bottom: none;
     }
 }
  
@@ -668,6 +764,20 @@ body {
 .table-responsive {
     width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: rgba(47, 106, 58, 0.35);
+    border-radius: 999px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: transparent;
 }
  
 .output-card {
@@ -905,6 +1015,7 @@ body {
     min-width: 0;
 }
 .form-card h5 { margin-top: 6px; margin-bottom: 12px }
+.time-label { margin: 10px 0 6px; font-size: 0.82rem; font-weight: 600; color: #4a5a4d; }
 .form-accent { position:absolute; left:0; top:0; width:6px; height:100%; border-top-left-radius:14px; border-bottom-left-radius:14px; }
 .form-accent-blue { background: linear-gradient(180deg,#d9f0ff,#e9f7ff); }
 .form-accent-amber { background: linear-gradient(180deg,#fff2d9,#fff9ec); }
@@ -934,10 +1045,10 @@ body {
     background: #f4fbff;
 }
 
-.table-card { margin-top: 20px; border-radius: 22px; padding: 22px; background: linear-gradient(180deg, #ffffff 0%, #f9fcf7 100%); border: 1px solid rgba(15,40,29,0.08); box-shadow: 0 14px 32px rgba(15,40,29,0.08); }
+.table-card { position: relative; margin-top: 20px; border-radius: 22px; padding: 22px; background: linear-gradient(180deg, #ffffff 0%, #f9fcf7 100%); border: 1px solid rgba(15,40,29,0.08); box-shadow: 0 14px 32px rgba(15,40,29,0.08); }
 .table-card h5 { margin-bottom: 18px; color: #13331f; font-size: 1.1rem; }
 .table-card + .table-card { margin-top: 28px; }
-.table.nicer-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+.table.nicer-table { width: 100%; min-width: 620px; border-collapse: separate; border-spacing: 0 8px; }
 .table.nicer-table thead th { color: #26432f; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.9rem; padding: 14px 18px; background: #eff6ee; border-bottom: 1px solid rgba(36,75,42,0.1); }
 .table.nicer-table tbody tr { background: white; border-radius: 16px; box-shadow: inset 0 0 0 1px rgba(15,40,29,0.04); transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .table.nicer-table tbody tr:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px rgba(15,40,29,0.06), 0 10px 20px rgba(15,40,29,0.08); }
@@ -1219,9 +1330,6 @@ footer h4 {
     .table.nicer-table tbody tr td:first-child {
         white-space: normal;
     }
-    .table.nicer-table tbody tr td {
-        word-break: break-word;
-    }
     .login-only-card {
         padding: 24px;
     }
@@ -1233,5 +1341,183 @@ footer h4 {
     }
     .ai-panel {
         width: calc(100vw - 32px);
+    }
+}
+
+/* ============================================================
+   FIX responsivo — botones de hora en "Crear clase"
+   ============================================================ */
+@media (max-width: 480px) {
+    .time-buttons .time-btn {
+        flex: 1 1 68px;
+        padding: 8px 8px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Espacio de respiro para que el botón de chat flotante no tape
+   el final de los formularios/cards en móvil */
+@media (max-width: 768px) {
+    .caja,
+    .admin-forms {
+        padding-bottom: 90px;
+    }
+}
+
+/* ============================================================
+   AUDITORÍA RESPONSIVE COMPLETA
+   Ajustes adicionales para tablet chico (600px) y celular (480px)
+   que no estaban cubiertos por los breakpoints originales.
+   ============================================================ */
+
+/* ---------- Tablet chico: 600px ---------- */
+@media (max-width: 600px) {
+    .hero-content {
+        padding-top: 72px;
+    }
+
+    .hero {
+        min-height: 300px;
+    }
+
+    .titulo-principal {
+        padding: 40px 0 20px;
+    }
+
+    .titulo-principal h2 {
+        font-size: 1.5rem;
+    }
+
+    .sport-focus-card {
+        padding: 20px;
+    }
+
+    .login-only-page {
+        padding: 24px 14px;
+    }
+
+    .login-only-card {
+        padding: 26px;
+    }
+
+    .cards-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---------- Celular: 480px ---------- */
+@media (max-width: 480px) {
+    .hero-content {
+        padding-top: 56px;
+    }
+
+    .hero h1 {
+        font-size: 1.9rem;
+        letter-spacing: -0.02em;
+    }
+
+    .hero h2 {
+        font-size: 0.95rem;
+    }
+
+    .hero::before {
+        height: 90px;
+        bottom: -40px;
+    }
+
+    .contenido {
+        padding: 18px;
+    }
+
+    .caja {
+        padding: 18px;
+    }
+
+    .sport-selector-card {
+        padding: 14px;
+        gap: 10px;
+    }
+
+    .sport-selector-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.05rem;
+    }
+
+    .login-only-card {
+        padding: 20px;
+    }
+
+    .login-only-card h2 {
+        font-size: 1.6rem;
+    }
+
+    .login-only-badge,
+    .login-only-features span {
+        font-size: 0.76rem;
+        padding: 6px 10px;
+    }
+
+    .table-card {
+        padding: 14px;
+        border-radius: 16px;
+    }
+
+    .table.nicer-table thead th {
+        padding: 10px 12px;
+        font-size: 0.76rem;
+    }
+
+    .table.nicer-table tbody td {
+        padding: 10px 12px;
+        font-size: 0.88rem;
+    }
+
+    .form-card {
+        padding: 14px;
+    }
+
+    .btn-modulo,
+    .btn-accent,
+    .btn-accent-blue,
+    .btn-accent-amber {
+        padding: 11px 14px;
+        font-size: 0.92rem;
+    }
+
+    .navbar-brand {
+        font-size: 0.95rem;
+    }
+
+    .sport-highlights span {
+        font-size: 0.78rem;
+        padding: 6px 9px;
+    }
+}
+
+/* ============================================================
+   Indicador de scroll horizontal en tablas (móvil)
+   La tabla ahora tiene min-width y se desliza dentro de
+   .table-responsive; este degradado avisa que hay más columnas.
+   ============================================================ */
+@media (max-width: 768px) {
+    .table-card::after {
+        content: '';
+        position: absolute;
+        top: 22px;
+        right: 22px;
+        bottom: 22px;
+        width: 26px;
+        background: linear-gradient(to right, rgba(255,255,255,0), #ffffff 70%);
+        pointer-events: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .table-card::after {
+        top: 14px;
+        right: 14px;
+        bottom: 14px;
+        width: 20px;
     }
 }
