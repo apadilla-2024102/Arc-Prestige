@@ -49,7 +49,8 @@ export const initServer = async () => {
     const app = express();
 
     // Initialize database connection
-    await dbConnection();
+        console.log('MongoDB URI:', process.env.MONGODB_URI);
+        await dbConnection();
 
     // Setup middlewares
     middlewares(app);

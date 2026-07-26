@@ -8,14 +8,14 @@ router.post('/', AttendanceController.create);
 // Obtener toda la asistencia
 router.get('/', AttendanceController.getAll);
 
-// Obtener asistencia por ID
-router.get('/:id', AttendanceController.getById);
-
 // Obtener asistencia por alumno
 router.get('/student/:studentId', AttendanceController.getByStudent);
 
 // Obtener asistencia por clase
 router.get('/class/:classId', AttendanceController.getByClass);
+
+// Obtener asistencia por ID
+router.get('/:id', AttendanceController.getById);
 
 // Actualizar asistencia
 router.put('/:id', AttendanceController.update);

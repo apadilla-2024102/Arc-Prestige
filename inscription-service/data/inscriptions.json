@@ -1,0 +1,35 @@
+[
+  {
+    "_id": "ins-001",
+    "studentName": "Daniel Vega",
+    "studentEmail": "daniel.vega@example.com",
+    "studentPhone": "5551001",
+    "studentId": "demo-user",
+    "className": "Técnica básica",
+    "status": "Confirmada",
+    "createdAt": "2026-07-12T10:30:00.000Z",
+    "updatedAt": "2026-07-12T10:30:00.000Z"
+  },
+  {
+    "_id": "ins-002",
+    "studentName": "Paula Gómez",
+    "studentEmail": "paula.gomez@example.com",
+    "studentPhone": "5551002",
+    "studentId": "demo-user",
+    "className": "Técnica avanzada",
+    "status": "Pendiente",
+    "createdAt": "2026-07-13T11:15:00.000Z",
+    "updatedAt": "2026-07-13T11:15:00.000Z"
+  },
+  {
+    "_id": "ins-003",
+    "studentName": "Lucía Torres",
+    "studentEmail": "lucia.torres@example.com",
+    "studentPhone": "5551003",
+    "studentId": "demo-student",
+    "className": "Técnica infantil",
+    "status": "Confirmada",
+    "createdAt": "2026-07-14T09:00:00.000Z",
+    "updatedAt": "2026-07-14T09:00:00.000Z"
+  }
+]

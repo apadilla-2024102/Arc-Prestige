@@ -1,0 +1,19 @@
+[
+  {
+    "_id": "813633d8-1187-4e6d-b8b7-617907322e85",
+    "name": "ClasePersistTest",
+    "description": "Demo persist test",
+    "instructorName": "Leona",
+    "schedule": {
+      "day": "Mar",
+      "startTime": "15:30",
+      "endTime": "16:40"
+    },
+    "level": "beginner",
+    "maxCapacity": 10,
+    "instructorId": "demo-instructor",
+    "status": "active",
+    "createdAt": "2026-07-15T18:10:58.326Z",
+    "updatedAt": "2026-07-15T18:10:58.326Z"
+  }
+]

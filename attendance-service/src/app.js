@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -17,19 +18,24 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'attendance-service' });
+  res.json({ status: 'ok', service: 'attendance-service', db: 'disconnected' });
 });
 
+app.use('/api/attendance', authMiddleware, attendanceRoutes);
+
 // MongoDB Connection
+console.log('MongoDB URI:', process.env.MONGODB_URI);
 mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  maxPoolSize: 10,
 })
 .then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+.catch(err => {
+  console.error('MongoDB connection error:', err.message);
+});
 
-// Routes
-app.use('/api/attendance', authMiddleware, attendanceRoutes);
+// Enable mongoose debug to log operations (helpful for auth failures)
+try { mongoose.set('debug', true); } catch (e) {}
 
 // 404 Handler
 app.use((req, res) => {

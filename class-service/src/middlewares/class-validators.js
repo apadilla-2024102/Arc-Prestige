@@ -10,10 +10,14 @@ export const validateClassCreation = [
         .isString()
         .isLength({ max: 500 })
         .withMessage('Description must be less than 500 characters'),
-    body('instructorId')
+    body('sport')
         .isString()
-        .notEmpty()
-        .withMessage('Instructor ID is required'),
+        .isIn(['archery', 'soccer', 'basketball'])
+        .withMessage('Sport must be archery, soccer, or basketball'),
+    body('instructorId')
+        .optional()
+        .isString()
+        .withMessage('Instructor ID must be a string if provided'),
     body('instructorName')
         .isString()
         .notEmpty()

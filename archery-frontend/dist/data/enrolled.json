@@ -1,0 +1,11 @@
+﻿{
+  "success": true,
+  "source": "static",
+  "message": "Reporte de estudiantes inscritos cargado como datos fijos.",
+  "data": {
+    "totalEnrolled": 24,
+    "newThisMonth": 6,
+    "averageAge": 19,
+    "topProgram": "Técnica básica"
+  }
+}

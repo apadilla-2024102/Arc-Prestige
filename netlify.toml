@@ -1,0 +1,6 @@
+[build]
+  command = "pnpm --filter archery-frontend build"
+  publish = "archery-frontend/dist"
+
+[dev]
+  command = "pnpm --filter archery-frontend dev"

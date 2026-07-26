@@ -22,6 +22,11 @@ const classSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        sport: {
+            type: String,
+            enum: ['archery', 'soccer', 'basketball'],
+            default: 'archery',
+        },
         schedule: {
             day: String,
             startTime: String,

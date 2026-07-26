@@ -1,0 +1,11 @@
+﻿{
+  "success": true,
+  "source": "static",
+  "message": "Reporte de clases cargado como datos fijos.",
+  "data": {
+    "totalClasses": 5,
+    "activeClasses": 3,
+    "occupancyRate": "74%",
+    "bestRatedCoach": "Cecilia"
+  }
+}

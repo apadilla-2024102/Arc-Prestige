@@ -1,18 +1,46 @@
 import Class from '../models/class.js';
+import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import { load, append } from '../utils/demoStorage.js';
 
 class ClassService {
     static async createClass(data, instructorId) {
-        const newClass = new Class({
+        const payload = {
+            _id: uuidv4(),
             ...data,
             instructorId,
             status: data.maxCapacity > 0 ? 'active' : 'full',
-        });
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
 
-        return await newClass.save();
+        if (!mongoose.connection || mongoose.connection.readyState !== 1) {
+            console.warn('classService createClass fallback to demo storage');
+            await append('classes.json', payload);
+            return payload;
+        }
+
+        try {
+            const newClass = new Class({
+                ...data,
+                instructorId,
+                status: data.maxCapacity > 0 ? 'active' : 'full',
+            });
+            return await newClass.save();
+        } catch (err) {
+            console.warn('classService createClass DB save failed, fallback to demo storage', err.message);
+            await append('classes.json', payload);
+            return payload;
+        }
     }
 
     static async getAllClasses() {
-        return await Class.find();
+        try {
+            return await Class.find();
+        } catch (err) {
+            console.warn('classService getAllClasses fallback to demo storage:', err.message);
+            return await load('classes.json');
+        }
     }
 
     static async getClassById(id) {

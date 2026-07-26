@@ -1,0 +1,35 @@
+[
+  {
+    "_id": "att-001",
+    "studentId": "demo-user",
+    "studentName": "María López",
+    "classId": "cls-001",
+    "className": "Técnica básica",
+    "date": "2026-07-14",
+    "status": "Presente",
+    "createdAt": "2026-07-14T18:00:00.000Z",
+    "updatedAt": "2026-07-14T18:00:00.000Z"
+  },
+  {
+    "_id": "att-002",
+    "studentId": "demo-user",
+    "studentName": "Mateo Pérez",
+    "classId": "cls-002",
+    "className": "Técnica avanzada",
+    "date": "2026-07-14",
+    "status": "Tarde",
+    "createdAt": "2026-07-14T18:00:00.000Z",
+    "updatedAt": "2026-07-14T18:00:00.000Z"
+  },
+  {
+    "_id": "att-003",
+    "studentId": "demo-user",
+    "studentName": "Sofía Ramírez",
+    "classId": "cls-003",
+    "className": "Técnica infantil",
+    "date": "2026-07-14",
+    "status": "Presente",
+    "createdAt": "2026-07-14T18:00:00.000Z",
+    "updatedAt": "2026-07-14T18:00:00.000Z"
+  }
+]

@@ -1,0 +1,5 @@
+﻿[
+  { "id": 1, "student": "Lucía M.", "className": "Técnica básica", "date": "2026-07-14", "status": "Presente" },
+  { "id": 2, "student": "Mateo P.", "className": "Técnica avanzada", "date": "2026-07-14", "status": "Tarde" },
+  { "id": 3, "student": "Sofía R.", "className": "Técnica infantil", "date": "2026-07-14", "status": "Presente" }
+]
