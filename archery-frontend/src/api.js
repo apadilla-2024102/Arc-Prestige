@@ -121,18 +121,27 @@ function normalizeRecord(item, fallback = {}) {
   }
 }
 
-async function readFirebaseItems(collectionName, fallback = []) {
+async function readFirebaseItems(collectionName) {
   if (!isFirebaseConfigured || !db) {
-    return fallback
+    return { items: [], error: null }
   }
 
   try {
     const snapshot = await getDocs(collection(db, collectionName))
     const items = snapshot.docs.map((doc) => normalizeRecord({ id: doc.id, _id: doc.id, ...doc.data() }))
-    return items.length > 0 ? items : fallback
+    return { items, error: null }
   } catch (error) {
-    return fallback
+    console.warn(`Firestore read failed for collection ${collectionName}:`, error)
+    return { items: [], error }
   }
+}
+
+function readFallbackItems(storageKey, staticData) {
+  const storedItems = readStoredItems(storageKey, [])
+  if (storedItems.length > 0) {
+    return storedItems
+  }
+  return Array.isArray(staticData) ? staticData : []
 }
 
 async function writeFirebaseItem(collectionName, item) {
@@ -273,7 +282,10 @@ export const login = async ({ emailOrUsername, password }) => {
 
 export const fetchAttendanceList = async () => {
   if (isFirebaseConfigured) {
-    return await readFirebaseItems(FIREBASE_COLLECTIONS.attendance, [])
+    const { items, error } = await readFirebaseItems(FIREBASE_COLLECTIONS.attendance)
+    if (items.length > 0) return items
+    if (error) return readFallbackItems(STORAGE_KEYS.attendance, FIXED_RESPONSES.attendance.data)
+    return readFallbackItems(STORAGE_KEYS.attendance, FIXED_RESPONSES.attendance.data)
   }
 
   try {
@@ -287,7 +299,10 @@ export const fetchAttendanceList = async () => {
 
 export const fetchInscriptionList = async () => {
   if (isFirebaseConfigured) {
-    return await readFirebaseItems(FIREBASE_COLLECTIONS.inscription, [])
+    const { items, error } = await readFirebaseItems(FIREBASE_COLLECTIONS.inscription)
+    if (items.length > 0) return items
+    if (error) return readFallbackItems(STORAGE_KEYS.inscription, FIXED_RESPONSES.inscription.data)
+    return readFallbackItems(STORAGE_KEYS.inscription, FIXED_RESPONSES.inscription.data)
   }
 
   try {
@@ -301,7 +316,10 @@ export const fetchInscriptionList = async () => {
 
 export const fetchClassList = async () => {
   if (isFirebaseConfigured) {
-    return await readFirebaseItems(FIREBASE_COLLECTIONS.class, [])
+    const { items, error } = await readFirebaseItems(FIREBASE_COLLECTIONS.class)
+    if (items.length > 0) return items
+    if (error) return readFallbackItems(STORAGE_KEYS.class, FIXED_RESPONSES.class.data)
+    return readFallbackItems(STORAGE_KEYS.class, FIXED_RESPONSES.class.data)
   }
 
   try {
