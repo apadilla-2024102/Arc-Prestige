@@ -12,6 +12,7 @@ import {
     fetchReportClassStats,
     fetchEnrolledStudents,
     querySportsAI,
+    sendContactMessage,
 } from './api'
 import {
     Target,
@@ -203,6 +204,10 @@ const App = () => {
         { role: 'assistant', text: 'Soy SportsBot, tu asistente deportivo. Pregunta algo sobre deportes.' },
     ])
     const [aiQuery, setAiQuery] = useState('')
+    const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
+    const [contactStatus, setContactStatus] = useState('')
+    const [contactLoading, setContactLoading] = useState(false)
+    const [pendingSection, setPendingSection] = useState(null)
     const aiInputRef = useRef(null)
 
     const activeSport = sportsConfig.find((sport) => sport.key === selectedSport) || sportsConfig[0]
@@ -234,6 +239,61 @@ const App = () => {
                 item.student_id,
             ].some((value) => userMatch(value))
         })
+    }
+
+    useEffect(() => {
+        if (!pendingSection) return
+
+        const scrollToSection = () => {
+            const element = document.getElementById(pendingSection)
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                setPendingSection(null)
+            }
+        }
+
+        const timeoutId = window.setTimeout(scrollToSection, 120)
+        return () => window.clearTimeout(timeoutId)
+    }, [pendingSection, mainTab])
+
+    const handleQuickLinkClick = (event, targetId) => {
+        event.preventDefault()
+        setPendingSection(targetId)
+
+        if (targetId === 'modulos' || targetId === 'reservas') {
+            setMainTab('modulos')
+        }
+    }
+
+    const handleContactSubmit = async (event) => {
+        event.preventDefault()
+
+        const name = contactForm.name.trim()
+        const email = contactForm.email.trim()
+        const message = contactForm.message.trim()
+
+        if (!name || !email || !message) {
+            setContactStatus('Completa tu nombre, correo y mensaje para enviarnos un correo.')
+            return
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            setContactStatus('Ingresa un correo electrónico válido antes de enviar.')
+            return
+        }
+
+        setContactLoading(true)
+        setContactStatus('')
+
+        try {
+            const result = await sendContactMessage({ name, email, message })
+            setContactStatus(result?.message || 'Tu mensaje fue enviado correctamente.')
+            setContactForm({ name: '', email: '', message: '' })
+        } catch (error) {
+            setContactStatus(error?.message || 'No pudimos enviar tu mensaje en este momento. Intenta nuevamente en unos minutos.')
+        } finally {
+            setContactLoading(false)
+        }
     }
 
     const regularUserServices = [
@@ -862,18 +922,43 @@ const App = () => {
                         <div className="col-md-6">
                             <h4>Quick Links</h4>
                             <div className="quick-links">
-                                <a href="#inicio">Inicio</a>
-                                <a href="#modulos">Módulos</a>
-                                <a href="#reservas">Reservas</a>
-                                <a href="#contacto">Contacto</a>
+                                <a href="#inicio" onClick={(event) => handleQuickLinkClick(event, 'inicio')}>Inicio</a>
+                                <a href="#modulos" onClick={(event) => handleQuickLinkClick(event, 'modulos')}>Módulos</a>
+                                <a href="#reservas" onClick={(event) => handleQuickLinkClick(event, 'reservas')}>Reservas</a>
+                                <a href="#contacto" onClick={(event) => handleQuickLinkClick(event, 'contacto')}>Contacto</a>
                             </div>
                         </div>
                         <div id="contacto" className="col-md-6 formulario">
                             <h4>Contacto</h4>
-                            <input className="form-control" placeholder="Nombre" />
-                            <input className="form-control" placeholder="Correo" />
-                            <textarea className="form-control" rows="4" placeholder="Mensaje" />
-                            <button className="btn-enviar mt-3">Enviar</button>
+                            <form onSubmit={handleContactSubmit}>
+                                <input
+                                    className="form-control"
+                                    placeholder="Nombre"
+                                    value={contactForm.name}
+                                    onChange={(event) => setContactForm((prev) => ({ ...prev, name: event.target.value }))}
+                                    required
+                                />
+                                <input
+                                    className="form-control"
+                                    placeholder="Correo"
+                                    type="email"
+                                    value={contactForm.email}
+                                    onChange={(event) => setContactForm((prev) => ({ ...prev, email: event.target.value }))}
+                                    required
+                                />
+                                <textarea
+                                    className="form-control"
+                                    rows="4"
+                                    placeholder="Mensaje"
+                                    value={contactForm.message}
+                                    onChange={(event) => setContactForm((prev) => ({ ...prev, message: event.target.value }))}
+                                    required
+                                />
+                                <button className="btn-enviar mt-3" type="submit" disabled={contactLoading}>
+                                    {contactLoading ? 'Enviando...' : 'Enviar'}
+                                </button>
+                                {contactStatus && <p className="mt-3 mb-0" style={{ color: '#2f7c49' }}>{contactStatus}</p>}
+                            </form>
                         </div>
                     </div>
 
