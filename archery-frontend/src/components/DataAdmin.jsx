@@ -29,12 +29,12 @@ const DataAdmin = ({ token }) => {
   const selectedClass = classOptions.find((c) => String(c.id) === String(attForm.classId))
   const enrolledStudents = attForm.classId
     ? insList.filter((item) => {
-        const classMatch = normalizeText(item.classId || item.classID || item.class_id) === normalizeText(attForm.classId)
-        const classNameMatch = selectedClass
-          ? normalizeText(item.className || item.class || item.class_name) === normalizeText(selectedClass.name)
-          : false
-        return classMatch || classNameMatch
-      })
+      const classMatch = normalizeText(item.classId || item.classID || item.class_id) === normalizeText(attForm.classId)
+      const classNameMatch = selectedClass
+        ? normalizeText(item.className || item.class || item.class_name) === normalizeText(selectedClass.name)
+        : false
+      return classMatch || classNameMatch
+    })
     : []
 
   useEffect(() => {
@@ -226,23 +226,22 @@ const DataAdmin = ({ token }) => {
             ))}
           </select>
           <input className="form-control mb-2" placeholder="Instructor" value={classForm.instructorName} onChange={(e) => setClassForm({ ...classForm, instructorName: e.target.value })} />
-          <div className="row gx-2">
-            <div className="col-6">
-              <input className="form-control mb-2" placeholder="Día (Lun)" value={classForm.schedule.day} onChange={(e) => setClassForm({ ...classForm, schedule: { ...classForm.schedule, day: e.target.value } })} />
-            </div>
-            <div className="col-6">
-              <div className="time-buttons d-flex gap-2">
-                {['15:00','15:30','16:00','16:30','17:00'].map(t => (
-                  <button type="button" key={t} className={`time-btn btn ${classForm.schedule.startTime === t ? 'active' : ''}`} onClick={() => setClassForm({ ...classForm, schedule: { ...classForm.schedule, startTime: t, endTime: classForm.schedule.endTime || t } })}>{t}</button>
-                ))}
-              </div>
-              <div style={{ height: 6 }} />
-              <div className="time-buttons d-flex gap-2">
-                {['16:00','16:30','17:00','17:30','18:00'].map(t => (
-                  <button type="button" key={t} className={`time-btn btn ${classForm.schedule.endTime === t ? 'active' : ''}`} onClick={() => setClassForm({ ...classForm, schedule: { ...classForm.schedule, endTime: t } })}>{t}</button>
-                ))}
-              </div>
-            </div>
+          {/* FIX: día y horas ahora van uno debajo del otro, a todo el ancho de la
+              tarjeta, en vez de repartirse en dos columnas de la mitad. Con la
+              tarjeta ya siendo 1/3 de la pantalla, dividirla otra vez dejaba muy
+              poco espacio para los botones de hora y los apilaba en una sola columna. */}
+          <input className="form-control mb-2" placeholder="Día (Lun)" value={classForm.schedule.day} onChange={(e) => setClassForm({ ...classForm, schedule: { ...classForm.schedule, day: e.target.value } })} />
+          <p className="time-label">Hora de inicio</p>
+          <div className="time-buttons d-flex gap-2">
+            {['15:00', '15:30', '16:00', '16:30', '17:00'].map(t => (
+              <button type="button" key={t} className={`time-btn btn ${classForm.schedule.startTime === t ? 'active' : ''}`} onClick={() => setClassForm({ ...classForm, schedule: { ...classForm.schedule, startTime: t, endTime: classForm.schedule.endTime || t } })}>{t}</button>
+            ))}
+          </div>
+          <p className="time-label">Hora de fin</p>
+          <div className="time-buttons d-flex gap-2 mb-2">
+            {['16:00', '16:30', '17:00', '17:30', '18:00'].map(t => (
+              <button type="button" key={t} className={`time-btn btn ${classForm.schedule.endTime === t ? 'active' : ''}`} onClick={() => setClassForm({ ...classForm, schedule: { ...classForm.schedule, endTime: t } })}>{t}</button>
+            ))}
           </div>
           <button className="btn-modulo btn-accent" type="submit">Crear clase</button>
         </form>
@@ -270,9 +269,9 @@ const DataAdmin = ({ token }) => {
               <option key={option.id} value={option.id}>{`${option.name} (${option.sport})`}</option>
             ))}
           </select>
-          <div className="row gx-2">
-            <div className="col-6"><input className="form-control mb-2" placeholder="Teléfono" value={insForm.studentPhone} onChange={(e) => setInsForm({ ...insForm, studentPhone: e.target.value })} /></div>
-            <div className="col-6"><input type="date" className="form-control mb-2" value={insForm.dateOfBirth} onChange={(e) => setInsForm({ ...insForm, dateOfBirth: e.target.value })} /></div>
+          <div className="row gx-2 gy-2">
+            <div className="col-12 col-md-6"><input className="form-control mb-2" placeholder="Teléfono" value={insForm.studentPhone} onChange={(e) => setInsForm({ ...insForm, studentPhone: e.target.value })} /></div>
+            <div className="col-12 col-md-6"><input type="date" className="form-control mb-2" value={insForm.dateOfBirth} onChange={(e) => setInsForm({ ...insForm, dateOfBirth: e.target.value })} /></div>
           </div>
           <small className="text-muted">Se intentará crear también una cuenta de usuario en AuthService.</small>
           <div style={{ height: 8 }} />
