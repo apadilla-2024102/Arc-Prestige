@@ -1,8 +1,13 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
     background: #f5f8f3;
     color: #233126;
     scroll-behavior: smooth;
+    margin: 0;
 }
 
 .custom-navbar {
@@ -100,7 +105,41 @@ body {
     color: #ffffff !important;
     text-decoration: underline;
 }
-
+ 
+.custom-navbar .container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+ 
+.custom-navbar .navbar-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.85rem;
+    width: 100%;
+}
+ 
+.custom-navbar .navbar-nav .nav-link {
+    padding: 0.5rem 0.65rem;
+}
+ 
+@media (max-width: 768px) {
+    .custom-navbar .container {
+        justify-content: center;
+        gap: 10px;
+    }
+    .custom-navbar .navbar-nav {
+        justify-content: center;
+    }
+    .custom-navbar .navbar-brand {
+        width: 100%;
+        justify-content: center;
+    }
+}
+ 
 .hero-content {
     max-width: 740px;
 }
@@ -626,7 +665,16 @@ body {
     flex-wrap: wrap;
     margin-bottom: 20px;
 }
-
+ 
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+ 
+.output-card {
+    overflow-x: auto;
+}
+ 
 .btn-toggle {
     min-width: 130px;
     background: #ffffff;
@@ -1114,16 +1162,57 @@ footer h4 {
     .hero {
         min-height: 360px;
     }
-
+ 
     .hero h1 {
         font-size: 2.3rem;
     }
-
+ 
     .hero h2 {
         font-size: 1.1rem;
     }
-
+ 
     footer {
         text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    .service-card {
+        min-height: auto;
+    }
+    .result-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .result-meta {
+        justify-content: flex-start;
+    }
+    .data-card {
+        padding: 16px;
+    }
+    .data-card-body {
+        grid-template-columns: 1fr;
+    }
+    .table.nicer-table tbody tr td:first-child {
+        white-space: normal;
+    }
+    .table.nicer-table tbody tr td {
+        word-break: break-word;
+    }
+    .login-only-card {
+        padding: 24px;
+    }
+    .main-tabs {
+        justify-content: center;
+    }
+    .navbar-brand {
+        font-size: 1.05rem;
+    }
+    .ai-panel {
+        width: calc(100vw - 32px);
     }
 }
