@@ -203,8 +203,8 @@ const DataAdmin = ({ token }) => {
 
   return (
     <div className="caja mt-4">
-      <h4>Administrar datos (demo)</h4>
-      <p>Usa estos formularios para crear objetos de prueba rápidamente.</p>
+      <h4>Administración de datos</h4>
+      <p>Usa estos formularios para gestionar la información del sistema.</p>
       <div className="admin-forms">
         <form onSubmit={submitClass} className="form-card">
           <div className="form-accent" />

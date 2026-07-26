@@ -137,8 +137,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Ocurrió un error al inicializar la base de datos");
-        throw; // Relanzar para detener la aplicación
+        logger.LogWarning(ex, "No se pudo inicializar la base de datos; la API seguirá funcionando para endpoints que no dependan de ella (como el formulario de contacto)");
     }
 }
 

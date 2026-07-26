@@ -1,4 +1,15 @@
 ﻿const API_BASE = '/data'
+const AUTH_SERVICE_BASE_URL = (import.meta.env.VITE_AUTH_SERVICE_URL || '').trim()
+
+const buildAuthServiceUrl = (path = '') => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (!AUTH_SERVICE_BASE_URL) {
+    return normalizedPath
+  }
+
+  const normalizedBase = AUTH_SERVICE_BASE_URL.endsWith('/') ? AUTH_SERVICE_BASE_URL.slice(0, -1) : AUTH_SERVICE_BASE_URL
+  return `${normalizedBase}${normalizedPath}`
+}
 
 const STORAGE_KEYS = {
   attendance: 'arc-prestige-attendance',
@@ -261,6 +272,32 @@ export const fetchEnrolledStudents = async () => {
   } catch (error) {
     return FIXED_RESPONSES.enrolled
   }
+}
+
+export const sendContactMessage = async ({ name, email, message }) => {
+  const payload = {
+    name: String(name || '').trim(),
+    email: String(email || '').trim(),
+    message: String(message || '').trim(),
+  }
+
+  const response = await fetch(buildAuthServiceUrl('/api/v1/contact/send'), {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const contentType = response.headers.get('Content-Type') || ''
+  const body = contentType.includes('application/json') ? await response.json() : null
+
+  if (!response.ok) {
+    const messageText = body?.message || body?.error || `${response.status} ${response.statusText}`
+    throw new Error(messageText)
+  }
+
+  return body || { success: true, message: 'Tu mensaje fue enviado correctamente.' }
 }
 
 const getSportsAiFixedAnswer = (question) => {
