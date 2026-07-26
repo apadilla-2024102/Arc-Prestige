@@ -1,0 +1,8 @@
+packages:
+  - attendance-service
+  - class-service
+  - inscription-service
+  - report-service
+  - archery-frontend
+  - "sports-ai"
+  - expo-app

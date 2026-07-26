@@ -1,0 +1,4 @@
+﻿[
+  { "id": 1, "student": "Daniel V.", "studentEmail": "daniel@arcprestige.com", "className": "Técnica básica", "status": "Confirmada" },
+  { "id": 2, "student": "Paula G.", "studentEmail": "paula@arcprestige.com", "className": "Técnica avanzada", "status": "Pendiente" }
+]

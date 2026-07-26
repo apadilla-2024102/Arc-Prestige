@@ -1,9 +1,11 @@
 {
   "name": "arc-prestige",
   "version": "1.0.0",
+  "packageManager": "pnpm@8.8.0",
   "description": "Sistema integral de gestión...",
   "main": "index.js",
   "scripts": {
+    "build": "pnpm --filter archery-frontend build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

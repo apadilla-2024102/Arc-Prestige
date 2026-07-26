@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 
 export const dbConnection = async () => {
     try {
+        // Enable mongoose debug to log operations (helps diagnose auth failures)
+        try { mongoose.set('debug', true); } catch(e){}
         mongoose.connection.on('error', () => {
             console.error('MongoDB | Connection error');
             mongoose.disconnect();
@@ -27,7 +29,10 @@ export const dbConnection = async () => {
         });
     } catch (err) {
         console.error(`Class Service - Error connecting to DB: ${err.message}`);
-        process.exit(1);
+        // Don't exit the process; allow the server to run in degraded/demo mode.
+        // Downstream services will receive errors when trying to persist, but
+        // the API can still run and return fallback/demo responses.
+        return;
     }
 };
 

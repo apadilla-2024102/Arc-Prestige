@@ -1,7 +1,20 @@
+const mongoose = require('mongoose');
 const Attendance = require('../models/attendance');
 const { validateAttendance } = require('../validators/attendanceValidator');
 
 class AttendanceController {
+    static fallbackResponse(res, value, message = 'attendance fallback response') {
+        const demoStorage = require('../utils/demoStorage');
+        const { v4: uuidv4 } = require('uuid');
+        const demo = { _id: uuidv4(), ...value, createdAt: new Date(), updatedAt: new Date() };
+        return demoStorage.append('attendance.json', demo)
+            .then(() => res.status(201).json(demo))
+            .catch((err) => {
+                console.error('attendance fallback storage failed:', err.message);
+                res.status(500).json({ error: 'Attendance fallback storage failed' });
+            });
+    }
+
     // Registrar asistencia
     static async create(req, res) {
         try {
@@ -11,9 +24,19 @@ class AttendanceController {
                 return res.status(400).json({ error: error.details[0].message });
             }
 
-            const attendance = new Attendance(value);
-            await attendance.save();
-            res.status(201).json(attendance);
+            if (mongoose.connection.readyState !== 1) {
+                console.warn('attendance DB disconnected, using fallback storage');
+                return await AttendanceController.fallbackResponse(res, value);
+            }
+
+            try {
+                const attendance = new Attendance(value);
+                await attendance.save();
+                return res.status(201).json(attendance);
+            } catch (dbErr) {
+                console.warn('attendance save failed, using demo storage:', dbErr.message);
+                return await AttendanceController.fallbackResponse(res, value);
+            }
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -22,9 +45,24 @@ class AttendanceController {
     // Obtener toda la asistencia
     static async getAll(req, res) {
         try {
-            const attendance = await Attendance.find();
-            res.json(attendance);
+            if (mongoose.connection.readyState !== 1) {
+                console.warn('attendance DB disconnected, loading fallback storage');
+                const demoStorage = require('../utils/demoStorage');
+                const data = await demoStorage.load('attendance.json');
+                return res.json(data);
+            }
+            try {
+                const attendance = await Attendance.find();
+                return res.json(attendance);
+            } catch (dbErr) {
+                console.warn('attendance fetch failed, using demo storage:', dbErr.message);
+                const demoStorage = require('../utils/demoStorage');
+                const data = await demoStorage.load('attendance.json');
+                return res.json(data);
+            }
         } catch (err) {
+            console.error('attendance getAll error', err);
+            try { console.error('mongoose state', require('mongoose').connection.readyState); } catch(e){}
             res.status(500).json({ error: err.message });
         }
     }

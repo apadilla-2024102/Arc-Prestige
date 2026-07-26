@@ -1,0 +1,11 @@
+﻿{
+  "success": true,
+  "source": "static",
+  "message": "Reporte de asistencia cargado como datos fijos.",
+  "data": {
+    "present": 18,
+    "late": 4,
+    "absent": 2,
+    "weeklyTrend": "+12%"
+  }
+}

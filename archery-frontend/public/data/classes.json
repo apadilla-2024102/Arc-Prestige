@@ -1,0 +1,6 @@
+﻿[
+  { "id": 1, "sport": "archery", "name": "Técnica básica", "coach": "Mauro", "schedule": "Lun. 18:00", "capacity": 12 },
+  { "id": 2, "sport": "archery", "name": "Técnica avanzada", "coach": "Cecilia", "schedule": "Mié. 20:00", "capacity": 8 },
+  { "id": 3, "sport": "soccer", "name": "Fútbol juvenil", "coach": "Jorge", "schedule": "Mar. 17:00", "capacity": 16 },
+  { "id": 4, "sport": "basketball", "name": "Básquet iniciación", "coach": "Carla", "schedule": "Jue. 19:00", "capacity": 10 }
+]

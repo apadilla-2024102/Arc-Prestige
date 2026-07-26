@@ -4025,11 +4025,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
+      "projectUniqueName": "C:\\Users\\Gahel\\Documents\\Arc-Prestige\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
       "projectName": "AuthService.Application",
-      "projectPath": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
+      "projectPath": "C:\\Users\\Gahel\\Documents\\Arc-Prestige\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
       "packagesPath": "C:\\Users\\Gahel\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Application\\obj\\",
+      "outputPath": "C:\\Users\\Gahel\\Documents\\Arc-Prestige\\auth-service\\src\\AuthService.Application\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Gahel\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -4044,8 +4044,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Domain\\AuthService.Domain.csproj": {
-              "projectPath": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Domain\\AuthService.Domain.csproj"
+            "C:\\Users\\Gahel\\Documents\\Arc-Prestige\\auth-service\\src\\AuthService.Domain\\AuthService.Domain.csproj": {
+              "projectPath": "C:\\Users\\Gahel\\Documents\\Arc-Prestige\\auth-service\\src\\AuthService.Domain\\AuthService.Domain.csproj"
             }
           }
         }

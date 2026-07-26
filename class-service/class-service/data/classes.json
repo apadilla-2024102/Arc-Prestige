@@ -1,0 +1,19 @@
+[
+  {
+    "_id": "dfb6c3d1-edf3-4aa2-914a-2fc958586123",
+    "name": "Fitss2",
+    "description": "Clase test 2",
+    "instructorName": "Leona",
+    "schedule": {
+      "day": "Mar",
+      "startTime": "15:30",
+      "endTime": "16:40"
+    },
+    "level": "beginner",
+    "maxCapacity": 10,
+    "instructorId": "demo-instructor",
+    "status": "active",
+    "createdAt": "2026-07-15T18:05:06.588Z",
+    "updatedAt": "2026-07-15T18:05:06.588Z"
+  }
+]

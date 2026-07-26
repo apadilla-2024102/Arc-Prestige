@@ -92,6 +92,22 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("validate-token")]
+    [Authorize]
+    public ActionResult<object> ValidateToken()
+    {
+        var userId = GetUserIdFromClaims();
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        return Ok(new
+        {
+            success = true,
+            userId,
+            role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? string.Empty
+        });
+    }
+
     [HttpPost("verify-email")]
     [EnableRateLimiting("ApiPolicy")]
     public async Task<ActionResult<EmailResponseDto>> VerifyEmail([FromBody] VerifyEmailDto verifyEmailDto)

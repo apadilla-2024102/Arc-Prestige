@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "u2QktZIfwVs=",
+  "dgSpecHash": "CGssMwdwXI4=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
+  "projectFilePath": "C:\\Users\\Gahel\\Documents\\Arc-Prestige\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Gahel\\.nuget\\packages\\bouncycastle.cryptography\\2.5.1\\bouncycastle.cryptography.2.5.1.nupkg.sha512",
     "C:\\Users\\Gahel\\.nuget\\packages\\cloudinarydotnet\\1.27.7\\cloudinarydotnet.1.27.7.nupkg.sha512",
@@ -85,9 +85,9 @@
       "code": "NU1902",
       "level": "Warning",
       "message": "Package 'MailKit' 4.13.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr",
-      "projectPath": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
+      "projectPath": "C:\\Users\\Gahel\\Documents\\Arc-Prestige\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\Gahel\\Downloads\\Arc-Prestige-main\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
+      "filePath": "C:\\Users\\Gahel\\Documents\\Arc-Prestige\\auth-service\\src\\AuthService.Application\\AuthService.Application.csproj",
       "libraryId": "MailKit",
       "targetGraphs": [
         "net8.0"

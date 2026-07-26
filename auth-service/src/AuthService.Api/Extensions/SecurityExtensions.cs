@@ -16,12 +16,13 @@ public static class SecurityExtensions
         {
             options.AddPolicy("DefaultCorsPolicy", builder =>
             {
-                var allowedOrigins = configuration.GetSection("Security:AllowedOrigins").Get<string[]>()
-                    ?? DefaultAllowedOrigins;
-
-                builder.WithOrigins(allowedOrigins)
+                builder.SetIsOriginAllowed(origin =>
+                           !string.IsNullOrEmpty(origin) &&
+                           (origin.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase)
+                            || origin.StartsWith("https://localhost", StringComparison.OrdinalIgnoreCase)
+                            || origin.StartsWith("http://127.0.0.1", StringComparison.OrdinalIgnoreCase)))
                        .AllowAnyHeader()
-                       .WithMethods(AllowedHttpMethods)
+                       .AllowAnyMethod()
                        .AllowCredentials()
                        .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
             });
