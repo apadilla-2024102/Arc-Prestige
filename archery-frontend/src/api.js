@@ -1,4 +1,7 @@
-﻿const API_BASE = '/data'
+﻿import { addDoc, collection, getDocs } from 'firebase/firestore'
+import { db, isFirebaseConfigured } from './firebase'
+
+const API_BASE = '/data'
 const AUTH_SERVICE_BASE_URL = (import.meta.env.VITE_AUTH_SERVICE_URL || '').trim()
 
 const buildAuthServiceUrl = (path = '') => {
@@ -101,6 +104,57 @@ const FIXED_RESPONSES = {
       topProgram: 'Técnica básica',
     },
   },
+}
+
+const FIREBASE_COLLECTIONS = {
+  attendance: 'attendance',
+  inscription: 'inscriptions',
+  class: 'classes',
+}
+
+function normalizeRecord(item, fallback = {}) {
+  if (!item || typeof item !== 'object') return fallback
+  return {
+    ...item,
+    _id: item._id || item.id || `${Date.now()}`,
+    id: item.id || item._id || `${Date.now()}`,
+  }
+}
+
+async function readFirebaseItems(collectionName, fallback = []) {
+  if (!isFirebaseConfigured || !db) {
+    return fallback
+  }
+
+  try {
+    const snapshot = await getDocs(collection(db, collectionName))
+    const items = snapshot.docs.map((doc) => normalizeRecord({ id: doc.id, _id: doc.id, ...doc.data() }))
+    return items.length > 0 ? items : fallback
+  } catch (error) {
+    return fallback
+  }
+}
+
+async function writeFirebaseItem(collectionName, item) {
+  if (!isFirebaseConfigured || !db) {
+    return null
+  }
+
+  try {
+    const docRef = await addDoc(collection(db, collectionName), item)
+    return { ...item, id: docRef.id, _id: docRef.id }
+  } catch (error) {
+    return null
+  }
+}
+
+async function persistItemWithFallback(collectionName, storageKey, item) {
+  const normalizedItem = normalizeRecord(item)
+  const firebaseResult = await writeFirebaseItem(collectionName, normalizedItem)
+  const persistedItem = firebaseResult || normalizedItem
+
+  addStoredItem(storageKey, persistedItem)
+  return persistedItem
 }
 
 function readStoredItems(key, fallback = []) {
@@ -218,6 +272,10 @@ export const login = async ({ emailOrUsername, password }) => {
 }
 
 export const fetchAttendanceList = async () => {
+  if (isFirebaseConfigured) {
+    return await readFirebaseItems(FIREBASE_COLLECTIONS.attendance, [])
+  }
+
   try {
     const result = await requestJson(getApiUrl('attendance.json'))
     const data = Array.isArray(result) ? result : result?.data
@@ -228,6 +286,10 @@ export const fetchAttendanceList = async () => {
 }
 
 export const fetchInscriptionList = async () => {
+  if (isFirebaseConfigured) {
+    return await readFirebaseItems(FIREBASE_COLLECTIONS.inscription, [])
+  }
+
   try {
     const result = await requestJson(getApiUrl('inscriptions.json'))
     const data = Array.isArray(result) ? result : result?.data
@@ -238,6 +300,10 @@ export const fetchInscriptionList = async () => {
 }
 
 export const fetchClassList = async () => {
+  if (isFirebaseConfigured) {
+    return await readFirebaseItems(FIREBASE_COLLECTIONS.class, [])
+  }
+
   try {
     const result = await requestJson(getApiUrl('classes.json'))
     const data = Array.isArray(result) ? result : result?.data
@@ -341,8 +407,7 @@ export const createClass = async (token, payload) => {
     capacity: payload.maxCapacity || 10,
   }, 'class')
 
-  addStoredItem(STORAGE_KEYS.class, createdClass)
-  return createdClass
+  return persistItemWithFallback(FIREBASE_COLLECTIONS.class, STORAGE_KEYS.class, createdClass)
 }
 
 export const createInscription = async (token, payload) => {
@@ -354,8 +419,7 @@ export const createInscription = async (token, payload) => {
     className: payload.className || payload.class || 'Técnica básica',
   }, 'inscription')
 
-  addStoredItem(STORAGE_KEYS.inscription, createdInscription)
-  return createdInscription
+  return persistItemWithFallback(FIREBASE_COLLECTIONS.inscription, STORAGE_KEYS.inscription, createdInscription)
 }
 
 export const createAttendance = async (token, payload) => {
@@ -367,8 +431,7 @@ export const createAttendance = async (token, payload) => {
     status: payload.status || 'Presente',
   }, 'attendance')
 
-  addStoredItem(STORAGE_KEYS.attendance, createdAttendance)
-  return createdAttendance
+  return persistItemWithFallback(FIREBASE_COLLECTIONS.attendance, STORAGE_KEYS.attendance, createdAttendance)
 }
 
 export const registerUser = async (payload) => {
