@@ -6,6 +6,7 @@ using MailKit.Security;
 using MimeKit;
 using AuthService.Application.Interfaces;
 using System.IO;
+using System.Net;
 
 namespace AuthService.Application.Services;
 
@@ -67,7 +68,26 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
         await SendEmailAsync(email, subject, body);
     }
 
-    private async Task SendEmailAsync(string to, string subject, string body)
+    public async Task SendContactMessageAsync(string fromName, string fromEmail, string message, string? toEmail = null)
+    {
+        var recipient = string.IsNullOrWhiteSpace(toEmail)
+            ? (configuration["SmtpSettings:FromEmail"] ?? "losalcas521@gmail.com")
+            : toEmail;
+
+        var subject = $"Nuevo contacto desde Arc Prestige - {WebUtility.HtmlEncode(fromName)}";
+        var body = $@"
+            <h2>Nuevo mensaje de contacto</h2>
+            <p><strong>Nombre:</strong> {WebUtility.HtmlEncode(fromName)}</p>
+            <p><strong>Correo:</strong> {WebUtility.HtmlEncode(fromEmail)}</p>
+            <p><strong>Mensaje:</strong></p>
+            <p>{WebUtility.HtmlEncode(message).Replace(Environment.NewLine, "<br/>")}</p>
+        ";
+
+        var plainTextBody = $"Nuevo mensaje de contacto{Environment.NewLine}{Environment.NewLine}Nombre: {WebUtility.HtmlEncode(fromName)}{Environment.NewLine}Correo: {WebUtility.HtmlEncode(fromEmail)}{Environment.NewLine}{Environment.NewLine}Mensaje:{Environment.NewLine}{message}";
+        await SendEmailAsync(recipient, subject, body, plainTextBody);
+    }
+
+    private async Task SendEmailAsync(string to, string subject, string body, string? plainTextBody = null)
     {
         var smtpSettings = configuration.GetSection("SmtpSettings");
 
@@ -88,8 +108,9 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
             var password = smtpSettings["Password"];
             var fromEmail = smtpSettings["FromEmail"];
             var fromName = smtpSettings["FromName"];
+            var normalizedPassword = string.IsNullOrWhiteSpace(password) ? string.Empty : password.Replace(" ", string.Empty).Trim();
 
-            if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(username) || string.IsNullOrWhiteSpace(normalizedPassword))
             {
                 logger.LogError("La configuración SMTP no está configurada correctamente");
                 throw new InvalidOperationException("La configuración SMTP no está configurada correctamente");
@@ -150,17 +171,23 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
                 }
 
                 // Autenticación
-                await client.AuthenticateAsync(username, password);
+                await client.AuthenticateAsync(username, normalizedPassword);
 
                 // Crear mensaje con MimeKit
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress(fromName, fromEmail));
-                message.To.Add(new MailboxAddress("", to));
-                message.Subject = subject;
-                message.Body = new TextPart("html") { Text = body };
+                var mailPlainTextBody = plainTextBody ?? $"Asunto: {subject}{Environment.NewLine}{Environment.NewLine}{body}";
+                var mailMessage = new MimeMessage();
+                mailMessage.From.Add(new MailboxAddress(fromName, fromEmail));
+                mailMessage.To.Add(new MailboxAddress("", to));
+                mailMessage.ReplyTo.Add(new MailboxAddress(fromName, fromEmail));
+                mailMessage.Subject = subject;
+
+                var multipart = new MultipartAlternative();
+                multipart.Add(new TextPart("plain") { Text = mailPlainTextBody });
+                multipart.Add(new TextPart("html") { Text = body });
+                mailMessage.Body = multipart;
 
                 // Enviar
-                await client.SendAsync(message);
+                await client.SendAsync(mailMessage);
                 logger.LogInformation("Email enviado exitosamente");
 
                 await client.DisconnectAsync(true);
