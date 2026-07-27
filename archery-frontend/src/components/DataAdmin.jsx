@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react'
-import { createClass, createInscription, createAttendance, fetchClassList, fetchInscriptionList, fetchAttendanceList, registerUser } from '../api'
+import {
+  createClass,
+  createInscription,
+  createAttendance,
+  fetchClassList,
+  fetchInscriptionList,
+  fetchAttendanceList,
+  registerUser,
+  subscribeToCollection,
+  FIREBASE_COLLECTIONS,
+  STORAGE_KEYS,
+} from '../api'
 
 const classNameSuggestions = {
   archery: ['Técnica básica', 'Técnica avanzada', 'Tiro de precisión'],
@@ -186,7 +197,24 @@ const DataAdmin = ({ token }) => {
 
   useEffect(() => {
     if (!token) return
+
+    const unsubscribeClasses = subscribeToCollection(FIREBASE_COLLECTIONS.class, STORAGE_KEYS.class, [], (items) => {
+      setClassesList(Array.isArray(items) ? items : [])
+    })
+    const unsubscribeIns = subscribeToCollection(FIREBASE_COLLECTIONS.inscription, STORAGE_KEYS.inscription, [], (items) => {
+      setInsList(Array.isArray(items) ? items : [])
+    })
+    const unsubscribeAtt = subscribeToCollection(FIREBASE_COLLECTIONS.attendance, STORAGE_KEYS.attendance, [], (items) => {
+      setAttList(Array.isArray(items) ? items : [])
+    })
+
     refreshAll()
+
+    return () => {
+      unsubscribeClasses()
+      unsubscribeIns()
+      unsubscribeAtt()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
