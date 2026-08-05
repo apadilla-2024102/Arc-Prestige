@@ -498,15 +498,7 @@ export const querySportsAI = async (question) => {
     }
   }
 
-  // Fallback to static file or local heuristic.
-  try {
-    const result = await requestJson(getApiUrl('sports-ai.json'))
-    const answer = result?.answer || result?.message
-    if (typeof answer === 'string' && answer.trim()) return { answer: answer.trim() }
-  } catch (error) {
-    console.warn('Static Sports AI fallback failed', error)
-  }
-
+  // No more static JSON fallback: if the AI endpoints fail, use built-in heuristic.
   return { answer: getSportsAiFixedAnswer(question) }
 }
 
