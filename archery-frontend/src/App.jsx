@@ -411,9 +411,9 @@ const App = () => {
     }
 
     useEffect(() => {
-        const savedToken = localStorage.getItem('authToken')
-        const savedUser = localStorage.getItem('authUser')
-        const savedRole = localStorage.getItem('authRole')
+        const savedToken = sessionStorage.getItem('authToken')
+        const savedUser = sessionStorage.getItem('authUser')
+        const savedRole = sessionStorage.getItem('authRole')
         if (savedToken) {
             setToken(savedToken)
         }
@@ -456,37 +456,43 @@ const App = () => {
         setLoadingLogin(true)
         try {
             const result = await login(credentials)
-            if (!result.success || !result.token) {
+            if (!result.success) {
                 throw new Error(result.message || 'Credenciales incorrectas')
             }
 
-            const authToken = result.token
+            const authToken = result.token || ''
             setToken(authToken)
             setUser(result.userDetails)
             setUserRole(result.userDetails?.role || 'admin')
-            localStorage.setItem('authToken', authToken)
-            localStorage.setItem('authUser', JSON.stringify(result.userDetails))
-            localStorage.setItem('authRole', result.userDetails?.role || 'admin')
+            // Store only non-sensitive user info; tokens are handled by HttpOnly cookies
+            if (authToken) sessionStorage.setItem('authToken', authToken)
+            sessionStorage.setItem('authUser', JSON.stringify(result.userDetails))
+            sessionStorage.setItem('authRole', result.userDetails?.role || 'admin')
             setServiceMessage('Sesión iniciada correctamente. Ya puedes usar los servicios.')
             setServiceResult(null)
         } catch (error) {
             setLoginError(error.message || 'No se pudo iniciar sesión')
             setToken('')
             setUser(null)
-            localStorage.removeItem('authToken')
-            localStorage.removeItem('authUser')
+            sessionStorage.removeItem('authToken')
+            sessionStorage.removeItem('authUser')
         } finally {
             setLoadingLogin(false)
         }
     }
 
     const handleLogout = () => {
+        // If auth service configured, call logout to revoke refresh token and clear cookies
+        if (import.meta.env.VITE_AUTH_SERVICE_URL) {
+            fetch(buildAuthServiceUrl('/api/v1/auth/logout'), { method: 'POST', credentials: 'include' }).catch(() => {})
+        }
+
         setToken('')
         setUser(null)
         setUserRole('admin')
-        localStorage.removeItem('authToken')
-        localStorage.removeItem('authUser')
-        localStorage.removeItem('authRole')
+        sessionStorage.removeItem('authToken')
+        sessionStorage.removeItem('authUser')
+        sessionStorage.removeItem('authRole')
         setServiceResult(null)
         setServiceMessage('Sesión cerrada.')
     }

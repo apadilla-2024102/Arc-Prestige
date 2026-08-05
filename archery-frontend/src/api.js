@@ -285,7 +285,24 @@ export const login = async ({ emailOrUsername, password }) => {
   if (!normalized || !normalizedPassword) {
     return { success: false, message: 'Usuario y contraseña son obligatorios.' }
   }
+  // If an external auth service is configured, use it (cookies are set by server)
+  if (AUTH_SERVICE_BASE_URL) {
+    try {
+      const resp = await fetch(buildAuthServiceUrl('/api/v1/auth/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ emailOrUsername: normalized, password: normalizedPassword }),
+      })
+      const data = await resp.json()
+      return data
+    } catch (err) {
+      console.warn('Auth service unreachable', err)
+      return { success: false, message: 'Error al conectar con el servicio de autenticación.' }
+    }
+  }
 
+  // Fallback: local demo users
   const user = findUserByIdentifier(normalized)
   if (!user || user.password !== normalizedPassword) {
     return { success: false, message: 'Usuario o contraseña incorrectos.' }

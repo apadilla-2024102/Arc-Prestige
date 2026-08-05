@@ -2,6 +2,7 @@ using System.Security.Claims;
 using AuthService.Application.DTOs;
 using AuthService.Application.DTOs.Email;
 using AuthService.Application.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -89,7 +90,104 @@ public class AuthController(IAuthService authService) : ControllerBase
             return BadRequest(ModelState);
 
         var result = await authService.LoginAsync(loginDto);
+        if (result.Success)
+        {
+            var accessOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = result.ExpiresAt
+            };
+
+            var refreshOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(30)
+            };
+
+            Response.Cookies.Append("access_token", result.Token, accessOptions);
+            if (!string.IsNullOrEmpty(result.RefreshToken))
+                Response.Cookies.Append("refresh_token", result.RefreshToken, refreshOptions);
+
+            // Do not return raw tokens in the JSON body
+            var responseBody = new AuthResponseDto
+            {
+                Success = result.Success,
+                Message = result.Message,
+                Token = string.Empty,
+                RefreshToken = string.Empty,
+                UserDetails = result.UserDetails,
+                ExpiresAt = result.ExpiresAt
+            };
+
+            return Ok(responseBody);
+        }
+
         return Ok(result);
+    }
+
+    [HttpPost("refresh")]
+    public async Task<ActionResult<AuthResponseDto>> Refresh()
+    {
+        var refreshToken = Request.Cookies["refresh_token"];
+        if (string.IsNullOrEmpty(refreshToken)) return Unauthorized(new { success = false, message = "Refresh token missing" });
+
+        var result = await authService.RefreshTokenAsync(refreshToken);
+
+        if (result.Success)
+        {
+            var accessOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = result.ExpiresAt
+            };
+
+            var refreshOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(30)
+            };
+
+            Response.Cookies.Append("access_token", result.Token, accessOptions);
+            if (!string.IsNullOrEmpty(result.RefreshToken))
+                Response.Cookies.Append("refresh_token", result.RefreshToken, refreshOptions);
+
+            var responseBody = new AuthResponseDto
+            {
+                Success = result.Success,
+                Message = result.Message,
+                Token = string.Empty,
+                RefreshToken = string.Empty,
+                UserDetails = result.UserDetails,
+                ExpiresAt = result.ExpiresAt
+            };
+            return Ok(responseBody);
+        }
+
+        return Unauthorized(new { success = false, message = "Unable to refresh token" });
+    }
+
+    [HttpPost("logout")]
+    public async Task<ActionResult<object>> Logout()
+    {
+        var refreshToken = Request.Cookies["refresh_token"];
+        if (!string.IsNullOrEmpty(refreshToken))
+        {
+            await authService.RevokeRefreshTokenAsync(refreshToken);
+        }
+
+        // Remove cookies
+        Response.Cookies.Delete("access_token");
+        Response.Cookies.Delete("refresh_token");
+
+        return Ok(new { success = true, message = "Logged out" });
     }
 
     [HttpPost("validate-token")]
