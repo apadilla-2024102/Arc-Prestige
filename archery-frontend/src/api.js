@@ -2,8 +2,12 @@
 import { db, isFirebaseConfigured } from './firebase'
 
 const API_BASE = '/data'
-const AUTH_SERVICE_BASE_URL = (import.meta.env.VITE_AUTH_SERVICE_URL || '').trim()
+const AUTH_SERVICE_BASE_URL = (import.meta.env.VITE_AUTH_SERVICE_URL || (import.meta.env.DEV ? 'http://localhost:5296' : '')).trim()
 const SPORTS_AI_BASE_URL = (import.meta.env.VITE_SPORTS_AI_URL || '').trim()
+const ATTENDANCE_SERVICE_BASE_URL = (import.meta.env.VITE_ATTENDANCE_SERVICE_URL || (import.meta.env.DEV ? 'http://localhost:3003' : '')).trim()
+const CLASS_SERVICE_BASE_URL = (import.meta.env.VITE_CLASS_SERVICE_URL || (import.meta.env.DEV ? 'http://localhost:3002' : '')).trim()
+const INSCRIPTION_SERVICE_BASE_URL = (import.meta.env.VITE_INSCRIPTION_SERVICE_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '')).trim()
+const REPORT_SERVICE_BASE_URL = (import.meta.env.VITE_REPORT_SERVICE_URL || (import.meta.env.DEV ? 'http://localhost:3004' : '')).trim()
 
 const buildAuthServiceUrl = (path = '') => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
@@ -13,6 +17,36 @@ const buildAuthServiceUrl = (path = '') => {
 
   const normalizedBase = AUTH_SERVICE_BASE_URL.endsWith('/') ? AUTH_SERVICE_BASE_URL.slice(0, -1) : AUTH_SERVICE_BASE_URL
   return `${normalizedBase}${normalizedPath}`
+}
+
+const buildServiceUrl = (baseUrl, path = '') => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (!baseUrl) return normalizedPath
+  const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+  return `${normalizedBase}${normalizedPath}`
+}
+
+const addAuthHeader = (options = {}, token = '') => {
+  if (!token) return options
+  return {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+    },
+  }
+}
+
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options)
+  const body = await parseJsonResponse(response)
+
+  if (!response.ok) {
+    const message = body?.message || body?.error || `${response.status} ${response.statusText}`
+    throw new Error(message)
+  }
+
+  return body
 }
 
 export const STORAGE_KEYS = {
@@ -338,81 +372,94 @@ const buildSportsAiUrl = (path = '') => {
   return `${normalizedBase}${normalizedPath}`
 }
 
-export const fetchAttendanceList = async () => {
-  if (isFirebaseConfigured) {
-    const { items, error } = await readFirebaseItems(FIREBASE_COLLECTIONS.attendance)
-    if (items.length > 0) return items
-    if (error) return readFallbackItems(STORAGE_KEYS.attendance, FIXED_RESPONSES.attendance.data)
-    return readFallbackItems(STORAGE_KEYS.attendance, FIXED_RESPONSES.attendance.data)
-  }
+async function fetchServiceJson(url, token, options = {}) {
+  const finalOptions = addAuthHeader(
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      ...options,
+    },
+    token,
+  )
+  return await fetchJson(url, finalOptions)
+}
 
+export const fetchAttendanceList = async (token) => {
+  const serviceUrl = buildServiceUrl(ATTENDANCE_SERVICE_BASE_URL, '/api/attendance')
   try {
-    const result = await requestJson(getApiUrl('attendance.json'))
-    const data = Array.isArray(result) ? result : result?.data
-    return Array.isArray(data) ? [...readStoredItems(STORAGE_KEYS.attendance, data)] : readStoredItems(STORAGE_KEYS.attendance, FIXED_RESPONSES.attendance.data)
+    return await fetchServiceJson(serviceUrl, token, { method: 'GET' })
   } catch (error) {
+    if (isFirebaseConfigured) {
+      const { items, err } = await readFirebaseItems(FIREBASE_COLLECTIONS.attendance)
+      if (items.length > 0) return items
+      if (err) return readFallbackItems(STORAGE_KEYS.attendance, FIXED_RESPONSES.attendance.data)
+      return readFallbackItems(STORAGE_KEYS.attendance, FIXED_RESPONSES.attendance.data)
+    }
+
     return [...readStoredItems(STORAGE_KEYS.attendance, FIXED_RESPONSES.attendance.data)]
   }
 }
 
-export const fetchInscriptionList = async () => {
-  if (isFirebaseConfigured) {
-    const { items, error } = await readFirebaseItems(FIREBASE_COLLECTIONS.inscription)
-    if (items.length > 0) return items
-    if (error) return readFallbackItems(STORAGE_KEYS.inscription, FIXED_RESPONSES.inscription.data)
-    return readFallbackItems(STORAGE_KEYS.inscription, FIXED_RESPONSES.inscription.data)
-  }
-
+export const fetchInscriptionList = async (token) => {
+  const serviceUrl = buildServiceUrl(INSCRIPTION_SERVICE_BASE_URL, '/api/inscriptions')
   try {
-    const result = await requestJson(getApiUrl('inscriptions.json'))
-    const data = Array.isArray(result) ? result : result?.data
-    return Array.isArray(data) ? [...readStoredItems(STORAGE_KEYS.inscription, data)] : readStoredItems(STORAGE_KEYS.inscription, FIXED_RESPONSES.inscription.data)
+    return await fetchServiceJson(serviceUrl, token, { method: 'GET' })
   } catch (error) {
+    if (isFirebaseConfigured) {
+      const { items, err } = await readFirebaseItems(FIREBASE_COLLECTIONS.inscription)
+      if (items.length > 0) return items
+      if (err) return readFallbackItems(STORAGE_KEYS.inscription, FIXED_RESPONSES.inscription.data)
+      return readFallbackItems(STORAGE_KEYS.inscription, FIXED_RESPONSES.inscription.data)
+    }
+
     return [...readStoredItems(STORAGE_KEYS.inscription, FIXED_RESPONSES.inscription.data)]
   }
 }
 
-export const fetchClassList = async () => {
-  if (isFirebaseConfigured) {
-    const { items, error } = await readFirebaseItems(FIREBASE_COLLECTIONS.class)
-    if (items.length > 0) return items
-    if (error) return readFallbackItems(STORAGE_KEYS.class, FIXED_RESPONSES.class.data)
-    return readFallbackItems(STORAGE_KEYS.class, FIXED_RESPONSES.class.data)
-  }
-
+export const fetchClassList = async (token) => {
+  const serviceUrl = buildServiceUrl(CLASS_SERVICE_BASE_URL, '/api/v1/classes')
   try {
-    const result = await requestJson(getApiUrl('classes.json'))
-    const data = Array.isArray(result) ? result : result?.data
-    return Array.isArray(data) ? [...readStoredItems(STORAGE_KEYS.class, data)] : readStoredItems(STORAGE_KEYS.class, FIXED_RESPONSES.class.data)
+    return await fetchServiceJson(serviceUrl, token, { method: 'GET' })
   } catch (error) {
+    if (isFirebaseConfigured) {
+      const { items, err } = await readFirebaseItems(FIREBASE_COLLECTIONS.class)
+      if (items.length > 0) return items
+      if (err) return readFallbackItems(STORAGE_KEYS.class, FIXED_RESPONSES.class.data)
+      return readFallbackItems(STORAGE_KEYS.class, FIXED_RESPONSES.class.data)
+    }
+
     return [...readStoredItems(STORAGE_KEYS.class, FIXED_RESPONSES.class.data)]
   }
 }
 
-export const fetchReportClassStats = async () => {
+export const fetchReportClassStats = async (token) => {
+  const serviceUrl = buildServiceUrl(REPORT_SERVICE_BASE_URL, '/api/reports/class-statistics')
   try {
-    const result = await requestJson(getApiUrl('report-class.json'))
-    return result?.data ? result : FIXED_RESPONSES.reportClass
+    const result = await fetchServiceJson(serviceUrl, token, { method: 'GET' })
+    return result?.data || result
   } catch (error) {
-    return FIXED_RESPONSES.reportClass
+    return FIXED_RESPONSES.reportClass.data
   }
 }
 
-export const fetchReportAttendance = async () => {
+export const fetchReportAttendance = async (token) => {
+  const serviceUrl = buildServiceUrl(REPORT_SERVICE_BASE_URL, '/api/reports/attendance')
   try {
-    const result = await requestJson(getApiUrl('report-attendance.json'))
-    return result?.data ? result : FIXED_RESPONSES.reportAttendance
+    const result = await fetchServiceJson(serviceUrl, token, { method: 'GET' })
+    return result?.data || result
   } catch (error) {
-    return FIXED_RESPONSES.reportAttendance
+    return FIXED_RESPONSES.reportAttendance.data
   }
 }
 
-export const fetchEnrolledStudents = async () => {
+export const fetchEnrolledStudents = async (token) => {
+  const serviceUrl = buildServiceUrl(REPORT_SERVICE_BASE_URL, '/api/reports/enrolled-students')
   try {
-    const result = await requestJson(getApiUrl('enrolled.json'))
-    return result?.data ? result : FIXED_RESPONSES.enrolled
+    const result = await fetchServiceJson(serviceUrl, token, { method: 'GET' })
+    return result?.data || result
   } catch (error) {
-    return FIXED_RESPONSES.enrolled
+    return FIXED_RESPONSES.enrolled.data
   }
 }
 
@@ -508,39 +555,66 @@ export const querySportsAI = async (question) => {
 }
 
 export const createClass = async (token, payload) => {
-  const createdClass = buildRecord({
+  const serviceUrl = buildServiceUrl(CLASS_SERVICE_BASE_URL, '/api/v1/classes')
+  const body = {
     ...payload,
     sport: payload.sport || 'archery',
     coach: payload.instructorName || payload.instructorId || 'Instructor demo',
     schedule: payload.schedule?.day ? `${payload.schedule.day} ${payload.schedule.startTime || ''}`.trim() : payload.schedule || 'Lun. 18:00',
     capacity: payload.maxCapacity || 10,
-  }, 'class')
+  }
 
-  return persistItemWithFallback(FIREBASE_COLLECTIONS.class, STORAGE_KEYS.class, createdClass)
+  try {
+    return await fetchServiceJson(serviceUrl, token, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+  } catch (error) {
+    const createdClass = buildRecord(body, 'class')
+    return persistItemWithFallback(FIREBASE_COLLECTIONS.class, STORAGE_KEYS.class, createdClass)
+  }
 }
 
 export const createInscription = async (token, payload) => {
-  const createdInscription = buildRecord({
+  const serviceUrl = buildServiceUrl(INSCRIPTION_SERVICE_BASE_URL, '/api/inscriptions')
+  const body = {
     ...payload,
     status: payload.status || 'Confirmada',
     student: payload.studentName || payload.name || 'Estudiante',
     studentEmail: payload.studentEmail || payload.email || 'cliente@arcprestige.com',
     className: payload.className || payload.class || 'Técnica básica',
-  }, 'inscription')
+  }
 
-  return persistItemWithFallback(FIREBASE_COLLECTIONS.inscription, STORAGE_KEYS.inscription, createdInscription)
+  try {
+    return await fetchServiceJson(serviceUrl, token, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+  } catch (error) {
+    const createdInscription = buildRecord(body, 'inscription')
+    return persistItemWithFallback(FIREBASE_COLLECTIONS.inscription, STORAGE_KEYS.inscription, createdInscription)
+  }
 }
 
 export const createAttendance = async (token, payload) => {
-  const createdAttendance = buildRecord({
+  const serviceUrl = buildServiceUrl(ATTENDANCE_SERVICE_BASE_URL, '/api/attendance')
+  const body = {
     ...payload,
     date: payload.date || new Date().toISOString().slice(0, 10),
     student: payload.studentName || payload.student || 'Alumno',
     className: payload.className || payload.class || 'Técnica básica',
     status: payload.status || 'Presente',
-  }, 'attendance')
+  }
 
-  return persistItemWithFallback(FIREBASE_COLLECTIONS.attendance, STORAGE_KEYS.attendance, createdAttendance)
+  try {
+    return await fetchServiceJson(serviceUrl, token, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+  } catch (error) {
+    const createdAttendance = buildRecord(body, 'attendance')
+    return persistItemWithFallback(FIREBASE_COLLECTIONS.attendance, STORAGE_KEYS.attendance, createdAttendance)
+  }
 }
 
 export const registerUser = async (payload) => {
