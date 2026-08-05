@@ -3,6 +3,7 @@ import { db, isFirebaseConfigured } from './firebase'
 
 const API_BASE = '/data'
 const AUTH_SERVICE_BASE_URL = (import.meta.env.VITE_AUTH_SERVICE_URL || '').trim()
+const SPORTS_AI_BASE_URL = (import.meta.env.VITE_SPORTS_AI_URL || '').trim()
 
 const buildAuthServiceUrl = (path = '') => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
@@ -322,6 +323,14 @@ export const login = async ({ emailOrUsername, password }) => {
   }
 }
 
+const buildSportsAiUrl = (path = '') => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (!SPORTS_AI_BASE_URL) return normalizedPath
+
+  const normalizedBase = SPORTS_AI_BASE_URL.endsWith('/') ? SPORTS_AI_BASE_URL.slice(0, -1) : SPORTS_AI_BASE_URL
+  return `${normalizedBase}${normalizedPath}`
+}
+
 export const fetchAttendanceList = async () => {
   if (isFirebaseConfigured) {
     const { items, error } = await readFirebaseItems(FIREBASE_COLLECTIONS.attendance)
@@ -446,15 +455,37 @@ const getSportsAiFixedAnswer = (question) => {
 }
 
 export const querySportsAI = async (question) => {
+  // If a Sports AI backend URL is configured, call it (POST { question })
+  if (SPORTS_AI_BASE_URL) {
+    try {
+      const url = buildSportsAiUrl('/api/sports-ai')
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+      })
+
+      const contentType = resp.headers.get('Content-Type') || ''
+      const body = contentType.includes('application/json') ? await resp.json() : null
+
+      if (resp.ok) {
+        const answer = body?.answer || body?.message
+        if (typeof answer === 'string' && answer.trim()) return { answer: answer.trim() }
+      }
+    } catch (err) {
+      console.warn('Sports AI backend call failed', err)
+    }
+  }
+
+  // Fallback to static file or local heuristic
   try {
     const result = await requestJson(getApiUrl('sports-ai.json'))
     const answer = result?.answer || result?.message
-    if (typeof answer === 'string' && answer.trim()) {
-      return { answer: answer.trim() }
-    }
+    if (typeof answer === 'string' && answer.trim()) return { answer: answer.trim() }
   } catch (error) {
-    // ignore
+    // ignore and use builtin fixed answers
   }
+
   return { answer: getSportsAiFixedAnswer(question) }
 }
 
