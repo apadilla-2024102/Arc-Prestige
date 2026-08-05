@@ -41,4 +41,14 @@ public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    public string GenerateRefreshToken()
+    {
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        var bytes = new byte[64]; // 512 bits
+        rng.GetBytes(bytes);
+        // Base64 URL-safe
+        var token = Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
+        return token;
+    }
 }
