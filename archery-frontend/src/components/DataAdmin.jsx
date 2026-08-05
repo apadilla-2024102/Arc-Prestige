@@ -254,6 +254,15 @@ const DataAdmin = ({ token }) => {
             ))}
           </select>
           <input className="form-control mb-2" placeholder="Instructor" value={classForm.instructorName} onChange={(e) => setClassForm({ ...classForm, instructorName: e.target.value })} />
+          <input
+            type="number"
+            className="form-control mb-2"
+            placeholder="Capacidad"
+            min={1}
+            value={classForm.maxCapacity}
+            onChange={(e) => setClassForm({ ...classForm, maxCapacity: parseInt(e.target.value, 10) || 1 })}
+            required
+          />
           {/* FIX: día y horas ahora van uno debajo del otro, a todo el ancho de la
               tarjeta, en vez de repartirse en dos columnas de la mitad. Con la
               tarjeta ya siendo 1/3 de la pantalla, dividirla otra vez dejaba muy
@@ -375,7 +384,7 @@ const DataAdmin = ({ token }) => {
           <div className="table-responsive">
             <table className="table nicer-table">
               <thead>
-                <tr><th>_id</th><th>Deporte</th><th>Nombre</th><th>Instructor</th><th>Inscritos</th></tr>
+                <tr><th>_id</th><th>Deporte</th><th>Nombre</th><th>Instructor</th><th>Capacidad</th><th>Inscritos</th></tr>
               </thead>
               <tbody>
                 {classesList.slice(0, 20).map((c) => (
@@ -384,6 +393,7 @@ const DataAdmin = ({ token }) => {
                     <td style={{ textTransform: 'capitalize' }}>{c.sport || c.type || 'Tiro con arco'}</td>
                     <td>{c.name || c.title || ''}</td>
                     <td>{c.instructorName || c.instructorId}</td>
+                    <td>{c.maxCapacity ?? c.capacity ?? '—'}</td>
                     <td>{c.currentEnrollment ?? c.participants?.length ?? 0}</td>
                   </tr>
                 ))}
