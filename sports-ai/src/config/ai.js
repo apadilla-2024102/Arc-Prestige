@@ -21,6 +21,7 @@ for (const candidate of envPaths) {
 
 const API_KEY = process.env.GEMINI_API_KEY?.trim() || null;
 const hasApiKey = Boolean(API_KEY);
+const TEMPERATURE = Number(process.env.GEMINI_TEMPERATURE ?? 0.6);
 
 const SYSTEM_PROMPT = `
 Eres "SportsBot", una Inteligencia Artificial especializada EXCLUSIVAMENTE en el mundo del deporte. Tu personalidad es la de un comentarista deportivo estrella: entusiasta, carismático, cercano y con un profundo conocimiento de fútbol, baloncesto, tenis, Fórmula 1, béisbol, boxeo, ciclismo, atletismo, deportes olímpicos y cualquier otra disciplina deportiva, tanto a nivel profesional como amateur.
@@ -73,20 +74,91 @@ Sé motivador, cercano y evita respuestas planas. Usa un lenguaje vibrante como 
 const fallbackAnswer = (question) => {
   const text = String(question || '').toLowerCase()
 
-  if (text.includes('arqu') || text.includes('arquer')) {
-    return 'Para mejorar en arquería, enfócate en la postura estable, el control de la respiración y mantener el codo alineado. Practica la misma rutina de montaje en cada disparo y revisa tu apuntado con calma antes de soltar la flecha.'
-  }
-  if (text.includes('futbol') || text.includes('fútbol')) {
-    return 'En fútbol, trabaja la técnica con ambos pies, la recepción del balón y la visión de juego. También es clave hacer ejercicios de resistencia y coordinación para mantener tu intensidad durante todo el partido.'
-  }
-  if (text.includes('basquet') || text.includes('baloncesto') || text.includes('básquet')) {
-    return 'Para mejorar en básquet, practica tiros libres con rutina, control de balón y cambios de ritmo. Trabaja también la defensa de pies y la lectura de los cortes del rival.'
-  }
-  if (text.includes('entrenamiento') || text.includes('rutina')) {
-    return 'Una buena rutina deportiva combina técnica, fuerza y recuperación. Calienta bien, entrenamientos con intención y termina con estiramientos suaves para evitar lesiones.'
+  const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)]
+
+  // Helpers to build a structured 4-6 sentence response
+  const buildStructured = ({intro, why, steps, example, practice}) => {
+    const sentences = []
+    if (intro) sentences.push(intro)
+    if (why) sentences.push(why)
+    if (steps && steps.length) sentences.push(`Pasos prácticos: ${steps.join('; ')}.`)
+    if (example) sentences.push(`Por ejemplo: ${example}.`)
+    if (practice) sentences.push(practice)
+    return sentences.join(' ')
   }
 
-  return `Excelente pregunta. Si quieres mejorar, enfócate en la técnica, la consistencia y el control mental. Pregunta con más detalle y te doy un plan más específico.`
+  if (text.includes('arqu') || text.includes('arquer')) {
+    return buildStructured({
+      intro: 'La arquería exige constancia y control: técnica antes que fuerza.',
+      why: 'Mejorar la postura y la respiración estabiliza cada disparo y reduce la variabilidad.',
+      steps: ['ajusta la postura de pie y el agarre', 'practica la respiración y el montaje en 50 repeticiones', 'registra parámetros y corrige con vídeo'],
+      example: 'una sesión típica: 10 tiros de calentamiento, 5 series de 10 a objetivo controlado',
+      practice: 'Practica 3 veces por semana y revisa grabaciones para corregir detalles.'
+    })
+  }
+
+  if (text.includes('futbol') || text.includes('fútbol') || text.includes('regate') || text.includes('dribbl')) {
+    return buildStructured({
+      intro: 'El regate es una mezcla de técnica, ritmo y lectura del rival.',
+      why: 'Mejorar en el regate aumenta tu capacidad para superar marcas y crear ventajas en ataque.',
+      steps: ['trabaja cambios de ritmo en espacios cortos', 'practica ambos pies en ejercicios de conos', 'ejercicios 1v1 simulando presión'],
+      example: 'por ejemplo, 4 series de 30 segundos de dribbling entre conos seguido de 1v1 ligero',
+      practice: 'Repite esto 3-4 veces por semana y añade video-análisis para observar detalles de equilibrio.'
+    })
+  }
+
+  if (text.includes('basquet') || text.includes('baloncesto') || text.includes('básquet')) {
+    return buildStructured({
+      intro: 'El baloncesto requiere repetición y decisión rápida bajo presión.',
+      why: 'Mejorar tiros y control de balón reduce errores en el juego real.',
+      steps: ['técnica de tiro desde 3 posiciones', 'drills de manejo con resistencia', 'simula finales de partido en práctica'],
+      example: 'ejecuta 50 tiros libres con rutina de respiración y 30 minutos de handling con cambios de ritmo',
+      practice: 'Haz sesiones cortas y enfocadas 4 veces a la semana para progreso sostenido.'
+    })
+  }
+
+  if (text.includes('entrenamiento') || text.includes('rutina') || text.includes('fuerza') || text.includes('plan')) {
+    return buildStructured({
+      intro: 'Una rutina efectiva combina técnica, fuerza y recuperación.',
+      why: 'La planificación evita sobrecarga y maximiza adaptación.',
+      steps: ['planifica 2 días de fuerza, 2 de técnica y 1 de recuperación activa', 'mide progreso con métricas simples cada 2 semanas'],
+      example: 'p. ej. lunes fuerza, martes técnica, jueves fuerza, viernes técnica y domingo trote suave',
+      practice: 'Ajusta volúmenes según fatiga y duerme bien para consolidar ganancias.'
+    })
+  }
+
+  // Default structured but varied answer
+  const intros = [
+    'Buena pregunta: el progreso viene con práctica deliberada y consistencia.',
+    'Excelente consulta: enfocarse en los fundamentos produce mejoras rápidas.',
+    'Gran pregunta — la clave está en dividir la habilidad en partes prácticas.'
+  ]
+
+  const whys = [
+    'Trabajar la técnica reduce errores y facilita la ejecución en situaciones reales.',
+    'La consistencia entrenable convierte movimientos en hábitos fiables durante el juego.',
+    'La combinación de técnica y preparación física hace que tu rendimiento sea estable.'
+  ]
+
+  const stepsSample = [
+    'divide la sesión en técnica, repetición y juego simulado',
+    'usa feedback (vídeo o entrenador) para ajustar detalles',
+    'mantén un registro de sesiones y mejora pequeños objetivos cada semana'
+  ]
+
+  const examples = [
+    'por ejemplo, practica 10 minutos de técnica específica y 20 minutos de aplicación en juego reducido',
+    'por ejemplo, añade 3 series de ejercicios específicos al final de la sesión para consolidar la habilidad',
+    'por ejemplo, graba tu sesión y revisa 1 minuto clave para corregir postura o balance'
+  ]
+
+  return buildStructured({
+    intro: randomChoice(intros),
+    why: randomChoice(whys),
+    steps: [randomChoice(stepsSample), randomChoice(stepsSample)],
+    example: randomChoice(examples),
+    practice: 'Si quieres, dime tu deporte y nivel y te doy una rutina concreta.'
+  })
 }
 
 const createFallbackChat = () => ({
@@ -114,6 +186,8 @@ const extractTextFromGeminiResponse = (result) => {
       }
 
       if (Array.isArray(item.parts)) return flattenTextItems(item.parts)
+      // Some Gemini responses nest parts under `content.parts` (content may be an object)
+      if (item.content && Array.isArray(item.content.parts)) return flattenTextItems(item.content.parts)
       if (Array.isArray(item.content)) return flattenTextItems(item.content)
       return []
     })
@@ -151,14 +225,23 @@ const extractTextFromGeminiResponse = (result) => {
 
 const buildGeminiPayload = (question) => {
   const prompt = normalizeQuestion(question)
-
+  // Keep payload minimal and compatible with the REST endpoint. Avoid sending
+  // unknown root-level fields that some API versions reject (e.g., temperature).
   return {
+    systemInstruction: {
+      role: 'system',
+      parts: [
+        {
+          text: SYSTEM_PROMPT,
+        },
+      ],
+    },
     contents: [
       {
-        mimeType: 'text/plain',
+        role: 'user',
         parts: [
           {
-            text: `${SYSTEM_PROMPT}\n\nPregunta del usuario: ${prompt}`,
+            text: prompt,
           },
         ],
       },
@@ -166,18 +249,49 @@ const buildGeminiPayload = (question) => {
   }
 }
 
+const sportsKeywords = [
+  'futbol', 'fútbol', 'baloncesto', 'basket', 'basquet', 'básquet', 'tenis', 'formula', 'f1', 'fórmula',
+  'ciclismo', 'atletismo', 'boxeo', 'béisbol', 'beisbol', 'rugby', 'natación', 'golf', 'hockey', 'voleibol',
+  'entrenamiento', 'rutina', 'táctica', 'tactica', 'fichaje', 'equipo', 'jugador', 'marcador', 'partido',
+  'liga', 'torneo', 'árbitro', 'arbitro', 'regate', 'dribbl', 'tiro', 'tiros', 'pase', 'pases', 'defensa', 'ataque',
+  'velocidad', 'agilidad', 'resistencia', 'elasticidad', 'flexibilidad', 'movilidad', 'fuerza', 'potencia',
+  'técnica', 'tecnica', 'habilidad', 'lesión', 'lesiones', 'recuperación', 'recuperacion', 'nutrición', 'nutricion'
+]
+
+const isSportsQuestion = (question) => {
+  const text = String(question || '').toLowerCase()
+  // If any sports keyword appears, consider it a sports question.
+  return sportsKeywords.some((kw) => text.includes(kw))
+}
+
+const rejectionPhrases = [
+  '¡Eso es tarjeta roja! Aquí solo hablamos de deportes — ¿qué equipo te apasiona?',
+  '¡Fuera de juego! Pregunta sobre deporte y te lo cuento todo con gusto.',
+  'Penalti por salirse de la cancha. Vuelve con una pregunta deportiva: ¿fútbol, básquet o F1?'
+]
+
+const rejectionAnswer = () => rejectionPhrases[Math.floor(Math.random() * rejectionPhrases.length)]
+
 const callGeminiRest = async (question) => {
   const trimmedQuestion = normalizeQuestion(question)
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent'
   const payload = buildGeminiPayload(trimmedQuestion)
 
   console.log('SportsAI Gemini question:', trimmedQuestion)
-  console.log('SportsAI Gemini payload:', JSON.stringify(payload, null, 2))
+  console.log('SportsAI Gemini payload (partial):', JSON.stringify({
+    systemInstruction: payload.systemInstruction,
+    contents: payload.contents,
+    // temperature is controlled locally via TEMPERATURE constant, but the
+    // REST API endpoint in some versions does not accept it at root-level.
+    temperature: TEMPERATURE,
+  }, null, 2))
 
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      // Prefer X-goog-api-key for API keys. If you use a bearer token, consider
+      // setting it in Authorization header instead (do not paste secrets in chat).
       'X-goog-api-key': API_KEY,
     },
     body: JSON.stringify(payload),
@@ -200,8 +314,11 @@ export const getSportsAiAnswer = async (question) => {
   }
 
   if (!hasApiKey) {
-    console.warn('⚠️ GEMINI_API_KEY no configurada. Usando respuestas deportivas locales.')
-    return fallbackAnswer(normalizedQuestion)
+    console.warn('⚠️ GEMINI_API_KEY no configurada. Usando respuestas deportivas locales cuando sea posible.')
+    // Si no hay clave, solo respondemos localmente a preguntas que parezcan deportivas.
+    if (isSportsQuestion(normalizedQuestion)) return fallbackAnswer(normalizedQuestion)
+    // Si no es claramente deportiva, rechazamos con estilo para mantener el ámbito.
+    return `${rejectionAnswer()} ` + 'Si quieres, pregúntame algo sobre entrenamiento, tácticas o jugadores.'
   }
 
   try {
