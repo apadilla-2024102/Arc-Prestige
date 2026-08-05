@@ -198,12 +198,38 @@ public class AuthService(
         var token = jwtTokenService.GenerateToken(user);
         var expiryMinutes = int.Parse(configuration["JwtSettings:ExpiryInMinutes"] ?? "30");
 
-        // Crear respuesta compacta
+        // Generar refresh token y almacenarlo (hash) para validación/rotación
+        var refreshToken = jwtTokenService.GenerateRefreshToken();
+
+        // Hash the refresh token before storing
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var refreshHashBytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(refreshToken));
+        var refreshHash = Convert.ToBase64String(refreshHashBytes);
+
+        if (user.UserPasswordReset == null)
+        {
+            user.UserPasswordReset = new UserPasswordReset
+            {
+                UserId = user.Id,
+                PasswordResetToken = refreshHash,
+                PasswordResetTokenExpiry = DateTime.UtcNow.AddDays(30) // refresh token valid 30 days
+            };
+        }
+        else
+        {
+            user.UserPasswordReset.PasswordResetToken = refreshHash;
+            user.UserPasswordReset.PasswordResetTokenExpiry = DateTime.UtcNow.AddDays(30);
+        }
+
+        await userRepository.UpdateUserAsync(user);
+
+        // Crear respuesta compacta (raw refresh token returned only to controller for cookie)
         return new AuthResponseDto
         {
             Success = true,
             Message = "Login exitoso",
             Token = token,
+            RefreshToken = refreshToken,
             UserDetails = MapToUserDetailsDto(user),
             ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes)
         };
@@ -428,6 +454,62 @@ public class AuthService(
         }
 
         return MapToUserResponseDto(user);
+    }
+
+    public async Task<AuthResponseDto> RefreshTokenAsync(string refreshToken)
+    {
+        if (string.IsNullOrEmpty(refreshToken))
+            throw new UnauthorizedAccessException("Refresh token missing");
+
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var hashBytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(refreshToken));
+        var refreshHash = Convert.ToBase64String(hashBytes);
+
+        // Buscar usuario por hash de refresh token
+        var user = await userRepository.GetByPasswordResetTokenAsync(refreshHash);
+        if (user == null || user.UserPasswordReset == null || user.UserPasswordReset.PasswordResetTokenExpiry == null || user.UserPasswordReset.PasswordResetTokenExpiry <= DateTime.UtcNow)
+        {
+            throw new UnauthorizedAccessException("Invalid or expired refresh token");
+        }
+
+        // Generar nuevo access token
+        var newToken = jwtTokenService.GenerateToken(user);
+        var expiryMinutes = int.Parse(configuration["JwtSettings:ExpiryInMinutes"] ?? "30");
+
+        // Rotar refresh token
+        var newRefreshToken = jwtTokenService.GenerateRefreshToken();
+        var newHash = Convert.ToBase64String(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(newRefreshToken)));
+
+        user.UserPasswordReset.PasswordResetToken = newHash;
+        user.UserPasswordReset.PasswordResetTokenExpiry = DateTime.UtcNow.AddDays(30);
+        await userRepository.UpdateUserAsync(user);
+
+        return new AuthResponseDto
+        {
+            Success = true,
+            Message = "Refresh successful",
+            Token = newToken,
+            RefreshToken = newRefreshToken,
+            UserDetails = MapToUserDetailsDto(user),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes)
+        };
+    }
+
+    public async Task<bool> RevokeRefreshTokenAsync(string refreshToken)
+    {
+        if (string.IsNullOrEmpty(refreshToken)) return false;
+
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var hashBytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(refreshToken));
+        var refreshHash = Convert.ToBase64String(hashBytes);
+
+        var user = await userRepository.GetByPasswordResetTokenAsync(refreshHash);
+        if (user == null || user.UserPasswordReset == null) return false;
+
+        user.UserPasswordReset.PasswordResetToken = null;
+        user.UserPasswordReset.PasswordResetTokenExpiry = null;
+        await userRepository.UpdateUserAsync(user);
+        return true;
     }
 }
 
