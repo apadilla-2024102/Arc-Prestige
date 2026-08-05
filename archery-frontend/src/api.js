@@ -455,7 +455,27 @@ const getSportsAiFixedAnswer = (question) => {
 }
 
 export const querySportsAI = async (question) => {
-  // If a Sports AI backend URL is configured, call it (POST { question })
+  // Prefer same-origin backend function and avoid browser caching.
+  try {
+    const sameOriginUrl = '/api/sports-ai'
+    const respSame = await fetch(sameOriginUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+      cache: 'no-store',
+    })
+
+    const contentTypeSame = respSame.headers ? respSame.headers.get('Content-Type') || '' : ''
+    const bodySame = contentTypeSame.includes('application/json') ? await respSame.json() : null
+    if (respSame.ok && bodySame) {
+      const answer = bodySame?.answer || bodySame?.message
+      if (typeof answer === 'string' && answer.trim()) return { answer: answer.trim() }
+    }
+  } catch (err) {
+    console.warn('Same-origin Sports AI call failed', err)
+  }
+
+  // If a Sports AI backend URL is configured, also try that as a fallback.
   if (SPORTS_AI_BASE_URL) {
     try {
       const url = buildSportsAiUrl('/api/sports-ai')
@@ -463,12 +483,13 @@ export const querySportsAI = async (question) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question }),
+        cache: 'no-store',
       })
 
       const contentType = resp.headers.get('Content-Type') || ''
       const body = contentType.includes('application/json') ? await resp.json() : null
 
-      if (resp.ok) {
+      if (resp.ok && body) {
         const answer = body?.answer || body?.message
         if (typeof answer === 'string' && answer.trim()) return { answer: answer.trim() }
       }
@@ -477,32 +498,13 @@ export const querySportsAI = async (question) => {
     }
   }
 
-  // If no external Sports AI URL, try a same-origin backend at /api/sports-ai (Netlify function or proxy)
-  try {
-    const sameOriginUrl = '/api/sports-ai'
-    const respSame = await fetch(sameOriginUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
-    })
-
-    const contentTypeSame = respSame.headers ? respSame.headers.get('Content-Type') || '' : ''
-    const bodySame = contentTypeSame.includes('application/json') ? await respSame.json() : null
-    if (respSame.ok) {
-      const answer = bodySame?.answer || bodySame?.message
-      if (typeof answer === 'string' && answer.trim()) return { answer: answer.trim() }
-    }
-  } catch (err) {
-    // ignore — fall through to static fallback
-  }
-
-  // Fallback to static file or local heuristic
+  // Fallback to static file or local heuristic.
   try {
     const result = await requestJson(getApiUrl('sports-ai.json'))
     const answer = result?.answer || result?.message
     if (typeof answer === 'string' && answer.trim()) return { answer: answer.trim() }
   } catch (error) {
-    // ignore and use builtin fixed answers
+    console.warn('Static Sports AI fallback failed', error)
   }
 
   return { answer: getSportsAiFixedAnswer(question) }
