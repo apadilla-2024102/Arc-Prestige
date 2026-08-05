@@ -477,6 +477,25 @@ export const querySportsAI = async (question) => {
     }
   }
 
+  // If no external Sports AI URL, try a same-origin backend at /api/sports-ai (Netlify function or proxy)
+  try {
+    const sameOriginUrl = '/api/sports-ai'
+    const respSame = await fetch(sameOriginUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+    })
+
+    const contentTypeSame = respSame.headers ? respSame.headers.get('Content-Type') || '' : ''
+    const bodySame = contentTypeSame.includes('application/json') ? await respSame.json() : null
+    if (respSame.ok) {
+      const answer = bodySame?.answer || bodySame?.message
+      if (typeof answer === 'string' && answer.trim()) return { answer: answer.trim() }
+    }
+  } catch (err) {
+    // ignore — fall through to static fallback
+  }
+
   // Fallback to static file or local heuristic
   try {
     const result = await requestJson(getApiUrl('sports-ai.json'))
