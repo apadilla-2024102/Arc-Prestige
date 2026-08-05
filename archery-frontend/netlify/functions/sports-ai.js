@@ -50,6 +50,20 @@ const extractTextFromGeminiResponse = (result) => {
     if (texts.length) return texts.join(' ')
   }
 
+  const fallbackOutputs = [
+    result.output,
+    result.output?.content?.[0],
+    result.output?.content?.[0]?.parts,
+    result.outputs?.[0]?.content?.[0],
+    result.outputs?.[0]?.content?.[0]?.parts,
+  ]
+
+  for (const candidate of fallbackOutputs) {
+    if (!candidate || typeof candidate !== 'object') continue
+    const texts = flattenTextItems([candidate])
+    if (texts.length) return texts.join(' ')
+  }
+
   if (typeof result.output === 'string' && result.output.trim()) return result.output.trim()
   if (typeof result.text === 'string' && result.text.trim()) return result.text.trim()
   return null
