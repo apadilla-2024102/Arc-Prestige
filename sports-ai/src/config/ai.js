@@ -22,7 +22,7 @@ for (const candidate of envPaths) {
 const API_KEY = process.env.GEMINI_API_KEY?.trim() || null;
 const hasApiKey = Boolean(API_KEY);
 
-const SYSTEM_INSTRUCTION = `
+const SYSTEM_PROMPT = `
 Eres "SportsBot", una Inteligencia Artificial especializada EXCLUSIVAMENTE en el mundo del deporte. Tu personalidad es la de un comentarista deportivo estrella: entusiasta, carismático, cercano y con un profundo conocimiento de fútbol, baloncesto, tenis, Fórmula 1, béisbol, boxeo, ciclismo, atletismo, deportes olímpicos y cualquier otra disciplina deportiva, tanto a nivel profesional como amateur.
 
 === REGLAS INQUEBRANTABLES ===
@@ -97,58 +97,83 @@ const createFallbackChat = () => ({
   }),
 })
 
+const normalizeQuestion = (question) => String(question ?? '').trim()
+
 const extractTextFromGeminiResponse = (result) => {
   if (!result || typeof result !== 'object') return null
 
-  if (Array.isArray(result.candidates) && result.candidates.length > 0) {
-    for (const candidate of result.candidates) {
-      if (Array.isArray(candidate.content)) {
-        const texts = candidate.content
-          .filter((item) => typeof item.text === 'string')
-          .map((item) => item.text.trim())
-          .filter(Boolean)
+  const flattenTextItems = (items) => {
+    if (!Array.isArray(items)) return []
 
-        if (texts.length) return texts.join(' ')
+    return items.flatMap((item) => {
+      if (!item || typeof item !== 'object') return []
+
+      if (typeof item.text === 'string') {
+        const trimmed = item.text.trim()
+        return trimmed ? [trimmed] : []
       }
 
-      if (candidate.content && Array.isArray(candidate.content.parts)) {
-        const texts = candidate.content.parts
-          .filter((item) => typeof item.text === 'string')
-          .map((item) => item.text.trim())
-          .filter(Boolean)
+      if (Array.isArray(item.parts)) return flattenTextItems(item.parts)
+      if (Array.isArray(item.content)) return flattenTextItems(item.content)
+      return []
+    })
+  }
 
-        if (texts.length) return texts.join(' ')
-      }
+  const candidateArrays = [
+    result.candidates,
+    result.output?.candidates,
+    result.choices,
+    result.outputs?.[0]?.content,
+    result.output?.content,
+    result.output?.parts,
+  ]
 
-      if (typeof candidate.text === 'string' && candidate.text.trim()) {
-        return candidate.text.trim()
-      }
-    }
+  for (const list of candidateArrays) {
+    if (!Array.isArray(list) || list.length === 0) continue
+    const texts = flattenTextItems(list)
+    if (texts.length) return texts.join(' ')
   }
 
   if (typeof result.output === 'string' && result.output.trim()) {
     return result.output.trim()
   }
 
+  if (typeof result.text === 'string' && result.text.trim()) {
+    return result.text.trim()
+  }
+
+  if (typeof result.response?.outputText === 'string' && result.response.outputText.trim()) {
+    return result.response.outputText.trim()
+  }
+
   return null
 }
 
-const buildGeminiPayload = (question) => ({
-  contents: [
-    {
-      parts: [
-        {
-          text: `${SYSTEM_INSTRUCTION}\n\nUsuario: ${String(question).trim()}`,
-        },
-      ],
-    },
-  ],
-})
+const buildGeminiPayload = (question) => {
+  const prompt = normalizeQuestion(question)
+
+  return {
+    contents: [
+      {
+        mimeType: 'text/plain',
+        parts: [
+          {
+            text: `${SYSTEM_PROMPT}\n\nPregunta del usuario: ${prompt}`,
+          },
+        ],
+      },
+    ],
+  }
+}
 
 const callGeminiRest = async (question) => {
+  const trimmedQuestion = normalizeQuestion(question)
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent'
-  const payload = buildGeminiPayload(question)
+  const payload = buildGeminiPayload(trimmedQuestion)
+
+  console.log('SportsAI Gemini question:', trimmedQuestion)
   console.log('SportsAI Gemini payload:', JSON.stringify(payload, null, 2))
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -168,34 +193,39 @@ const callGeminiRest = async (question) => {
 }
 
 export const getSportsAiAnswer = async (question) => {
-  if (!question || !String(question).trim()) {
+  const normalizedQuestion = normalizeQuestion(question)
+
+  if (!normalizedQuestion) {
     throw new Error('La pregunta no puede estar vacía.')
   }
 
   if (!hasApiKey) {
-    console.warn('⚠️ GEMINI_API_KEY no configurada. Usando respuestas deportivas locales.');
-    return fallbackAnswer(question)
+    console.warn('⚠️ GEMINI_API_KEY no configurada. Usando respuestas deportivas locales.')
+    return fallbackAnswer(normalizedQuestion)
   }
 
   try {
-    const result = await callGeminiRest(question)
+    const result = await callGeminiRest(normalizedQuestion)
     const text = extractTextFromGeminiResponse(result)
     if (text) return text
 
     console.warn('Gemini API devolvió respuesta sin texto válido:', JSON.stringify(result))
-    return fallbackAnswer(question)
+    return fallbackAnswer(normalizedQuestion)
   } catch (error) {
     console.error('Error al llamar a Gemini REST:', error)
-    return fallbackAnswer(question)
+    return fallbackAnswer(normalizedQuestion)
   }
 }
 
 export const createSportsChat = () => ({
-  sendMessage: async (question) => ({
-    response: {
-      text: () => getSportsAiAnswer(question),
-    },
-  }),
+  sendMessage: async (question) => {
+    const answer = await getSportsAiAnswer(question)
+    return {
+      response: {
+        text: () => answer,
+      },
+    }
+  },
 })
 
 export default {

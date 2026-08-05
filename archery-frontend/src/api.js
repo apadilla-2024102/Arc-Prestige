@@ -1,4 +1,4 @@
-﻿import { addDoc, collection, getDocs } from 'firebase/firestore'
+﻿import { addDoc, collection, getDocs, onSnapshot } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from './firebase'
 
 const API_BASE = '/data'
@@ -14,7 +14,7 @@ const buildAuthServiceUrl = (path = '') => {
   return `${normalizedBase}${normalizedPath}`
 }
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
   attendance: 'arc-prestige-attendance',
   inscription: 'arc-prestige-inscriptions',
   class: 'arc-prestige-classes',
@@ -40,7 +40,7 @@ const FIXED_USERS = [
   },
 ]
 
-const FIXED_RESPONSES = {
+export const FIXED_RESPONSES = {
   attendance: {
     success: true,
     source: 'static',
@@ -106,7 +106,7 @@ const FIXED_RESPONSES = {
   },
 }
 
-const FIREBASE_COLLECTIONS = {
+export const FIREBASE_COLLECTIONS = {
   attendance: 'attendance',
   inscription: 'inscriptions',
   class: 'classes',
@@ -134,6 +134,31 @@ async function readFirebaseItems(collectionName) {
     console.warn(`Firestore read failed for collection ${collectionName}:`, error)
     return { items: [], error }
   }
+}
+
+export const subscribeToCollection = (collectionName, storageKey, fallbackData, onItems) => {
+  if (!isFirebaseConfigured || !db) {
+    const fallbackItems = readFallbackItems(storageKey, fallbackData)
+    onItems(fallbackItems)
+    return () => {}
+  }
+
+  const unsubscribe = onSnapshot(
+    collection(db, collectionName),
+    (snapshot) => {
+      const items = snapshot.docs.map((doc) => normalizeRecord({ id: doc.id, _id: doc.id, ...doc.data() }))
+      const nextItems = items.length > 0 ? items : readFallbackItems(storageKey, fallbackData)
+      writeStoredItems(storageKey, nextItems)
+      onItems(nextItems)
+    },
+    (error) => {
+      console.warn(`Firestore subscription failed for collection ${collectionName}:`, error)
+      const fallbackItems = readFallbackItems(storageKey, fallbackData)
+      onItems(fallbackItems)
+    },
+  )
+
+  return unsubscribe
 }
 
 function readFallbackItems(storageKey, staticData) {
