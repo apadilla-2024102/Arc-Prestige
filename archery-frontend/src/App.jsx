@@ -702,7 +702,7 @@ const App = () => {
                 <span className="ai-launcher-label">AI</span>
             </button>
 
-            {showAdmin && userRole === 'admin' && mainTab === 'dashboard' && (
+            {showAdmin && userRole === 'admin' && (
                 <section className="container mt-4" id="admin-panel">
                     <div className="caja premium-card">
                         <h4 className="mb-3">Administración de datos</h4>
