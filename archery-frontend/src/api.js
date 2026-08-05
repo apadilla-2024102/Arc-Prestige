@@ -243,10 +243,17 @@ function getApiUrl(path) {
   return `${API_BASE}/${path}`
 }
 
+async function parseJsonResponse(response) {
+  try {
+    return await response.json()
+  } catch (err) {
+    return null
+  }
+}
+
 async function requestJson(url, options = {}) {
   const response = await fetch(url, options)
-  const contentType = response.headers.get('Content-Type') || ''
-  const body = contentType.includes('application/json') ? await response.json() : null
+  const body = await parseJsonResponse(response)
 
   if (!response.ok) {
     const message = body?.message || body?.error || `${response.status} ${response.statusText}`
@@ -465,8 +472,7 @@ export const querySportsAI = async (question) => {
       cache: 'no-store',
     })
 
-    const contentTypeSame = respSame.headers ? respSame.headers.get('Content-Type') || '' : ''
-    const bodySame = contentTypeSame.includes('application/json') ? await respSame.json() : null
+    const bodySame = await parseJsonResponse(respSame)
     if (respSame.ok && bodySame) {
       const answer = bodySame?.answer || bodySame?.message
       if (typeof answer === 'string' && answer.trim()) return { answer: answer.trim() }
@@ -486,8 +492,7 @@ export const querySportsAI = async (question) => {
         cache: 'no-store',
       })
 
-      const contentType = resp.headers.get('Content-Type') || ''
-      const body = contentType.includes('application/json') ? await resp.json() : null
+      const body = await parseJsonResponse(resp)
 
       if (resp.ok && body) {
         const answer = body?.answer || body?.message
