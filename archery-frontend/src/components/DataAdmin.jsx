@@ -312,7 +312,16 @@ const DataAdmin = ({ token }) => {
           <select
             className="form-control mb-2"
             value={attForm.classId}
-            onChange={(e) => setAttForm({ ...attForm, classId: e.target.value, studentId: '', studentName: '' })}
+            onChange={(e) => {
+              const selectedClassOption = classOptions.find((option) => String(option.id) === String(e.target.value))
+              setAttForm({
+                ...attForm,
+                classId: e.target.value,
+                className: selectedClassOption ? selectedClassOption.name : attForm.className,
+                studentId: '',
+                studentName: '',
+              })
+            }}
             required
           >
             <option value="">Selecciona una clase</option>

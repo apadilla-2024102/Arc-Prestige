@@ -117,8 +117,8 @@ public class AuthController(IAuthService authService) : ControllerBase
             {
                 Success = result.Success,
                 Message = result.Message,
-                Token = string.Empty,
-                RefreshToken = string.Empty,
+                Token = result.Token,
+                RefreshToken = result.RefreshToken,
                 UserDetails = result.UserDetails,
                 ExpiresAt = result.ExpiresAt
             };
