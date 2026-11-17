@@ -5,6 +5,8 @@ import Hero from './components/Hero'
 import DataAdmin from './components/DataAdmin'
 import Tabs from './components/Tabs'
 import Dashboard from './components/Dashboard'
+import HeroTarget from './components/HeroTarget'
+import { trackSpot } from './components/motion'
 import {
     login,
     fetchAttendanceList,
@@ -32,6 +34,7 @@ import {
     HelpCircle,
     MessageCircle,
     ArrowUp,
+    ArrowRight,
     X,
 } from 'lucide-react'
 
@@ -591,54 +594,67 @@ const App = () => {
 
     if (!token) {
         return (
-            <div className="login-only-page">
-                <div className="login-pattern" aria-hidden="true" />
-                <div className="login-only-card">
-                    <div className="login-only-header">
+            <div className="login-split">
+                <aside className="login-showcase">
+                    <div className="login-pattern" aria-hidden="true" />
+                    <div className="login-showcase-top">
                         <span className="login-brand" aria-hidden="true">
-                            <Target size={20} strokeWidth={1.8} />
+                            <Target size={18} strokeWidth={1.8} />
                         </span>
-                        <span className="login-only-badge">Arc Prestige</span>
-                        <h2>Inicia sesión</h2>
-                        <p>Ingresa tu correo o usuario y tu contraseña para continuar.</p>
+                        <span className="login-showcase-name">Arc Prestige</span>
                     </div>
-                    <form onSubmit={handleLogin} className="login-only-form" noValidate>
-                        <div className="field">
-                            <label htmlFor="login-user">Correo o usuario</label>
-                            <input
-                                id="login-user"
-                                className="form-control"
-                                value={credentials.emailOrUsername}
-                                onChange={(e) => setCredentials((prev) => ({ ...prev, emailOrUsername: e.target.value }))}
-                                placeholder="tu@correo.com"
-                                autoComplete="username"
-                                required
-                            />
-                        </div>
-                        <div className="field">
-                            <label htmlFor="login-pass">Contraseña</label>
-                            <input
-                                id="login-pass"
-                                type="password"
-                                className="form-control"
-                                value={credentials.password}
-                                onChange={(e) => setCredentials((prev) => ({ ...prev, password: e.target.value }))}
-                                placeholder="••••••••"
-                                autoComplete="current-password"
-                                required
-                            />
-                        </div>
-                        {loginError && <p className="form-error" role="alert">{loginError}</p>}
-                        <button className="btn-modulo btn-block login-only-button" type="submit" disabled={loadingLogin}>
-                            {loadingLogin ? <><span className="spinner" aria-hidden="true" />Iniciando sesión</> : 'Ingresar'}
-                        </button>
-                    </form>
-                    <div className="login-only-features">
-                        <span>Clases</span>
-                        <span>Asistencias</span>
-                        <span>Reportes</span>
+                    <div className="login-showcase-copy">
+                        <h1>Precisión en cada clase.</h1>
+                        <p>Clases, asistencias, inscripciones y reportes de tu academia en un solo panel.</p>
                     </div>
-                </div>
+                    <HeroTarget />
+                    <ul className="login-showcase-features">
+                        <li><Calendar size={16} strokeWidth={1.8} /> Asistencia en tiempo real</li>
+                        <li><Users2 size={16} strokeWidth={1.8} /> Inscripciones y alumnos</li>
+                        <li><BarChart3 size={16} strokeWidth={1.8} /> Reportes y estadísticas</li>
+                    </ul>
+                </aside>
+
+                <main className="login-only-page">
+                    <div className="login-only-card">
+                        <div className="login-only-header">
+                            <span className="login-only-badge">Bienvenido de nuevo</span>
+                            <h2>Inicia sesión</h2>
+                            <p>Ingresa tu correo o usuario y tu contraseña para continuar.</p>
+                        </div>
+                        <form onSubmit={handleLogin} className="login-only-form" noValidate>
+                            <div className="field">
+                                <label htmlFor="login-user">Correo o usuario</label>
+                                <input
+                                    id="login-user"
+                                    className="form-control"
+                                    value={credentials.emailOrUsername}
+                                    onChange={(e) => setCredentials((prev) => ({ ...prev, emailOrUsername: e.target.value }))}
+                                    placeholder="tu@correo.com"
+                                    autoComplete="username"
+                                    required
+                                />
+                            </div>
+                            <div className="field">
+                                <label htmlFor="login-pass">Contraseña</label>
+                                <input
+                                    id="login-pass"
+                                    type="password"
+                                    className="form-control"
+                                    value={credentials.password}
+                                    onChange={(e) => setCredentials((prev) => ({ ...prev, password: e.target.value }))}
+                                    placeholder="••••••••"
+                                    autoComplete="current-password"
+                                    required
+                                />
+                            </div>
+                            {loginError && <p className="form-error" role="alert">{loginError}</p>}
+                            <button className="btn-modulo btn-block login-only-button" type="submit" disabled={loadingLogin}>
+                                {loadingLogin ? <><span className="spinner" aria-hidden="true" />Iniciando sesión</> : <>Ingresar <ArrowRight size={16} strokeWidth={2} className="btn-arrow" /></>}
+                            </button>
+                        </form>
+                    </div>
+                </main>
             </div>
         )
     }
@@ -660,6 +676,10 @@ const App = () => {
 
                 {mainTab === 'dashboard' && (
                     <div className="dashboard-summary tab-panel" key="dashboard">
+                        <div className="section-head">
+                            <span className="section-eyebrow">Panel</span>
+                            <h2>Resumen general</h2>
+                        </div>
                         <Dashboard token={token} />
                         <div className="caja quick-card">
                             <div>
@@ -676,7 +696,8 @@ const App = () => {
 
                 {mainTab === 'modulos' && (
                     <div className="tab-panel" key="modulos">
-                        <div id="modulos" className="titulo-principal">
+                        <div id="modulos" className="titulo-principal section-head">
+                            <span className="section-eyebrow">Deportes</span>
                             <h2>Módulos deportivos</h2>
                             <p>El foco principal es el tiro con arco, pero puedes abrir otros deportes con sus propios módulos y flujos.</p>
                         </div>
@@ -687,7 +708,8 @@ const App = () => {
                                     key={sport.key}
                                     type="button"
                                     aria-pressed={selectedSport === sport.key}
-                                    className={`sport-selector-card ${selectedSport === sport.key ? 'active' : ''}`}
+                                    className={`sport-selector-card spot ${selectedSport === sport.key ? 'active' : ''}`}
+                                    onPointerMove={trackSpot}
                                     onClick={() => {
                                         setSelectedSport(sport.key)
                                         setServiceResult(null)
@@ -732,11 +754,16 @@ const App = () => {
 
                 {mainTab === 'servicios' && (
                     <div className="servicios tab-panel" id="servicios" key="servicios">
+                        <div className="section-head">
+                            <span className="section-eyebrow">Servicios</span>
+                            <h2>{userRole === 'user' ? 'Tus servicios' : `Servicios de ${activeSport.title.toLowerCase()}`}</h2>
+                            <p>Consulta la información y revisa el resultado más abajo.</p>
+                        </div>
                         <div className="service-grid">
-                            {effectiveServices.map((service) => {
+                            {effectiveServices.map((service, idx) => {
                                 const isLoading = loadingService === service.key
                                 return (
-                                    <div key={service.key} className="card-modulo service-card">
+                                    <div key={service.key} className="card-modulo service-card spot" onPointerMove={trackSpot} style={{ animationDelay: `${Math.min(idx, 6) * 40}ms` }}>
                                         <div className="contenido">
                                             <div className="service-badge"><Icon name={service.accent} size={18} /></div>
                                             <h4>{service.title}</h4>
@@ -747,7 +774,7 @@ const App = () => {
                                                 disabled={isLoading}
                                                 aria-busy={isLoading}
                                             >
-                                                {isLoading ? <><span className="spinner" aria-hidden="true" />Cargando</> : service.actionLabel}
+                                                {isLoading ? <><span className="spinner" aria-hidden="true" />Cargando</> : <>{service.actionLabel} <ArrowRight size={15} strokeWidth={2} className="btn-arrow" /></>}
                                             </button>
                                         </div>
                                     </div>

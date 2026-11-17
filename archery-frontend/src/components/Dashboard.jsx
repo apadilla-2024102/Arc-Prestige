@@ -8,7 +8,7 @@ import {
   fetchReportClassStats,
   fetchEnrolledStudents,
 } from '../api'
-import { CountUp, Reveal } from './motion'
+import { CountUp, Reveal, trackSpot } from './motion'
 
 const toArray = (value) => {
   if (Array.isArray(value)) return value
@@ -58,8 +58,8 @@ const fmt = (n) => new Intl.NumberFormat('es').format(n)
 
 /* -------------------------------------------------------------------------- */
 
-const KpiTile = ({ icon: Icon, label, value, hint, loading }) => (
-  <div className="kpi-tile">
+const KpiTile = ({ icon: Icon, label, value, hint, loading, featured }) => (
+  <div className={`kpi-tile spot ${featured ? 'is-featured' : ''}`} onPointerMove={trackSpot}>
     <div className="kpi-head">
       <span className="kpi-icon" aria-hidden="true"><Icon size={16} strokeWidth={2} /></span>
       <span className="kpi-label">{label}</span>
@@ -69,41 +69,70 @@ const KpiTile = ({ icon: Icon, label, value, hint, loading }) => (
   </div>
 )
 
-/* Stacked bar: attendance split by status. Status colors always ship with icon + label. */
+/* Donut: attendance split by status. Status colors always ship with icon + label. */
+const DONUT_R = 62
+const DONUT_W = 14
+const DONUT_C = 2 * Math.PI * DONUT_R
+const DONUT_GAP = 3
+
 const AttendanceSplit = ({ counts }) => {
   const [hover, setHover] = useState(null)
+  const [drawn, setDrawn] = useState(false)
   const total = counts.present + counts.late + counts.absent
 
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setDrawn(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  let offset = 0
+  const segments = STATUS.filter((s) => counts[s.key] > 0).map((s) => {
+    const len = (counts[s.key] / total) * DONUT_C
+    const seg = { ...s, len: Math.max(len - DONUT_GAP, 1), offset }
+    offset += len
+    return seg
+  })
+
+  const focus = hover ? STATUS.find((s) => s.key === hover) : STATUS[0]
+  const focusPct = pct(counts[focus.key], total)
+
   return (
-    <div className="viz-card caja">
+    <div className="viz-card caja viz-featured">
       <div className="viz-head">
         <div>
-          <h5>Asistencia por estado</h5>
+          <h5>Asistencia</h5>
           <p>{total > 0 ? `${fmt(total)} registros en total` : 'Sin registros todavía'}</p>
         </div>
-        <span className="viz-figure tabular">{pct(counts.present, total)}%<small>presentes</small></span>
       </div>
 
-      <div className="stack-bar" role="img" aria-label={STATUS.map((s) => `${s.label}: ${counts[s.key]}`).join(', ')}>
-        {STATUS.map((s) => counts[s.key] > 0 && (
-          <div
-            key={s.key}
-            className={`stack-seg status-${s.key} ${hover && hover !== s.key ? 'is-dim' : ''}`}
-            style={{ flexGrow: counts[s.key] }}
-            onMouseEnter={() => setHover(s.key)}
-            onMouseLeave={() => setHover(null)}
-          >
-            {hover === s.key && (
-              <span className="viz-tooltip" role="tooltip">
-                <strong>{s.label}</strong> {fmt(counts[s.key])} · {pct(counts[s.key], total)}%
-              </span>
-            )}
-          </div>
-        ))}
-        {total === 0 && <div className="stack-seg is-empty" style={{ flexGrow: 1 }} />}
+      <div className="donut-wrap">
+        <svg viewBox="0 0 160 160" className="donut" role="img" aria-label={STATUS.map((s) => `${s.label}: ${counts[s.key]}`).join(', ')}>
+          <circle cx="80" cy="80" r={DONUT_R} className="donut-track" strokeWidth={DONUT_W} fill="none" />
+          {segments.map((s) => (
+            <circle
+              key={s.key}
+              cx="80"
+              cy="80"
+              r={DONUT_R}
+              fill="none"
+              strokeWidth={hover === s.key ? DONUT_W + 4 : DONUT_W}
+              strokeLinecap="butt"
+              className={`donut-seg seg-${s.key} ${hover && hover !== s.key ? 'is-dim' : ''}`}
+              strokeDasharray={`${drawn ? s.len : 0} ${DONUT_C}`}
+              strokeDashoffset={-s.offset}
+              transform="rotate(-90 80 80)"
+              onMouseEnter={() => setHover(s.key)}
+              onMouseLeave={() => setHover(null)}
+            />
+          ))}
+        </svg>
+        <div className="donut-center" aria-hidden="true">
+          <span className="donut-value tabular">{focusPct}%</span>
+          <span className="donut-label">{focus.label.toLowerCase()}</span>
+        </div>
       </div>
 
-      <table className="legend-table">
+      <table className="legend-table on-dark">
         <tbody>
           {STATUS.map(({ key, label, Icon }) => (
             <tr
@@ -123,6 +152,55 @@ const AttendanceSplit = ({ counts }) => {
           ))}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+const DAY_ORDER = ['lun', 'mar', 'mié', 'mie', 'jue', 'vie', 'sáb', 'sab', 'dom']
+const DAY_INDEX = { lun: 0, mar: 1, 'mié': 2, mie: 2, jue: 3, vie: 4, 'sáb': 5, sab: 5, dom: 6 }
+
+const parseSchedule = (text) => {
+  const s = norm(text)
+  const day = DAY_ORDER.find((d) => s.startsWith(d))
+  const time = (s.match(/\d{1,2}:\d{2}/) || [])[0] || ''
+  return { day: day ? day.slice(0, 3) : '', dayIndex: day ? DAY_INDEX[day] : 9, time }
+}
+
+const UpcomingClasses = ({ rows }) => {
+  const items = rows
+    .map((r) => ({ ...r, ...parseSchedule(r.schedule) }))
+    .sort((a, b) => a.dayIndex - b.dayIndex || a.time.localeCompare(b.time))
+    .slice(0, 5)
+
+  return (
+    <div className="viz-card caja">
+      <div className="viz-head">
+        <div>
+          <h5>Calendario semanal</h5>
+          <p>Clases ordenadas por día y hora</p>
+        </div>
+      </div>
+      {items.length === 0 ? (
+        <div className="viz-empty">Sin horarios registrados</div>
+      ) : (
+        <ol className="agenda">
+          {items.map((r) => (
+            <li key={r.key} className="agenda-item">
+              <span className="agenda-day">
+                <span>{r.day ? r.day.charAt(0).toUpperCase() + r.day.slice(1) : '—'}</span>
+                <small className="tabular">{r.time || '--:--'}</small>
+              </span>
+              <span className="agenda-body">
+                <strong>{r.name}</strong>
+                <span>{r.sport} · {r.coach}</span>
+              </span>
+              <span className="agenda-seats tabular" title="Inscritos / capacidad">
+                {r.enrolled}<small>/{r.capacity || '—'}</small>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   )
 }
@@ -303,7 +381,7 @@ const Dashboard = ({ token }) => {
   return (
     <div className="stats-dashboard">
       <div className="kpi-grid">
-        <KpiTile icon={Users2} label="Alumnos inscritos" loading={loading} value={k && <CountUp value={k.enrolled} format={fmt} />} hint={k && (k.newThisMonth ? `+${k.newThisMonth} este mes` : 'Total registrado')} />
+        <KpiTile featured icon={Users2} label="Alumnos inscritos" loading={loading} value={k && <CountUp value={k.enrolled} format={fmt} />} hint={k && (k.newThisMonth ? `+${k.newThisMonth} este mes` : 'Total registrado')} />
         <KpiTile icon={Target} label="Clases activas" loading={loading} value={k && <CountUp value={k.activeClasses} format={fmt} />} hint={k && `de ${fmt(k.totalClasses)} clases en total`} />
         <KpiTile icon={Gauge} label="Ocupación" loading={loading} value={k && (/^\d+%$/.test(String(k.occupancy)) ? <CountUp value={parseInt(k.occupancy, 10)} format={(n) => `${n}%`} /> : k.occupancy)} hint={k && `${fmt(k.capacity)} cupos disponibles en total`} />
         <KpiTile icon={CalendarCheck} label="Tasa de asistencia" loading={loading} value={k && <CountUp value={k.attendanceRate} format={(n) => `${n}%`} />} hint={k && (k.weeklyTrend ? `${k.weeklyTrend} vs. semana anterior` : 'Presentes y tarde')} />
@@ -314,6 +392,7 @@ const Dashboard = ({ token }) => {
           <div className="viz-grid">
             <Reveal><AttendanceSplit counts={stats.statusCounts} /></Reveal>
             <Reveal delay={60}><ClassesBySport rows={stats.sports} /></Reveal>
+            <Reveal delay={120}><UpcomingClasses rows={stats.classRows} /></Reveal>
           </div>
 
           <Reveal className="caja table-section">

@@ -57,3 +57,12 @@ export const Reveal = ({ children, className = '', delay = 0, as: Tag = 'div' })
     </Tag>
   )
 }
+
+/* Cursor-following highlight. Sets vars on the hovered element itself. */
+export const trackSpot = (e) => {
+  const el = e.currentTarget
+  const r = el.getBoundingClientRect()
+  el.style.setProperty('--mx', `${e.clientX - r.left}px`)
+  el.style.setProperty('--my', `${e.clientY - r.top}px`)
+}
+
