@@ -8,6 +8,7 @@ import {
   fetchReportClassStats,
   fetchEnrolledStudents,
 } from '../api'
+import { CountUp, Reveal } from './motion'
 
 const toArray = (value) => {
   if (Array.isArray(value)) return value
@@ -302,20 +303,20 @@ const Dashboard = ({ token }) => {
   return (
     <div className="stats-dashboard">
       <div className="kpi-grid">
-        <KpiTile icon={Users2} label="Alumnos inscritos" loading={loading} value={k && fmt(k.enrolled)} hint={k && (k.newThisMonth ? `+${k.newThisMonth} este mes` : 'Total registrado')} />
-        <KpiTile icon={Target} label="Clases activas" loading={loading} value={k && fmt(k.activeClasses)} hint={k && `de ${fmt(k.totalClasses)} clases en total`} />
-        <KpiTile icon={Gauge} label="Ocupación" loading={loading} value={k && k.occupancy} hint={k && `${fmt(k.capacity)} cupos disponibles en total`} />
-        <KpiTile icon={CalendarCheck} label="Tasa de asistencia" loading={loading} value={k && `${k.attendanceRate}%`} hint={k && (k.weeklyTrend ? `${k.weeklyTrend} vs. semana anterior` : 'Presentes y tarde')} />
+        <KpiTile icon={Users2} label="Alumnos inscritos" loading={loading} value={k && <CountUp value={k.enrolled} format={fmt} />} hint={k && (k.newThisMonth ? `+${k.newThisMonth} este mes` : 'Total registrado')} />
+        <KpiTile icon={Target} label="Clases activas" loading={loading} value={k && <CountUp value={k.activeClasses} format={fmt} />} hint={k && `de ${fmt(k.totalClasses)} clases en total`} />
+        <KpiTile icon={Gauge} label="Ocupación" loading={loading} value={k && (/^\d+%$/.test(String(k.occupancy)) ? <CountUp value={parseInt(k.occupancy, 10)} format={(n) => `${n}%`} /> : k.occupancy)} hint={k && `${fmt(k.capacity)} cupos disponibles en total`} />
+        <KpiTile icon={CalendarCheck} label="Tasa de asistencia" loading={loading} value={k && <CountUp value={k.attendanceRate} format={(n) => `${n}%`} />} hint={k && (k.weeklyTrend ? `${k.weeklyTrend} vs. semana anterior` : 'Presentes y tarde')} />
       </div>
 
       {stats && (
         <>
           <div className="viz-grid">
-            <AttendanceSplit counts={stats.statusCounts} />
-            <ClassesBySport rows={stats.sports} />
+            <Reveal><AttendanceSplit counts={stats.statusCounts} /></Reveal>
+            <Reveal delay={60}><ClassesBySport rows={stats.sports} /></Reveal>
           </div>
 
-          <div className="caja table-section">
+          <Reveal className="caja table-section">
             <div className="viz-head">
               <div>
                 <h5>Ocupación por clase</h5>
@@ -363,9 +364,9 @@ const Dashboard = ({ token }) => {
                 )}
               </table>
             </div>
-          </div>
+          </Reveal>
 
-          <div className="caja table-section">
+          <Reveal className="caja table-section">
             <div className="viz-head">
               <div>
                 <h5>Asistencia por clase</h5>
@@ -402,7 +403,7 @@ const Dashboard = ({ token }) => {
             ) : (
               <div className="empty-state">Aún no hay asistencias vinculadas a una clase.</div>
             )}
-          </div>
+          </Reveal>
         </>
       )}
     </div>
