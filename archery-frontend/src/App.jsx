@@ -4,6 +4,7 @@ import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import DataAdmin from './components/DataAdmin'
 import Tabs from './components/Tabs'
+import Dashboard from './components/Dashboard'
 import {
     login,
     fetchAttendanceList,
@@ -659,23 +660,7 @@ const App = () => {
 
                 {mainTab === 'dashboard' && (
                     <div className="dashboard-summary tab-panel" key="dashboard">
-                        <div className="stat-grid">
-                            <div className="caja stat-card">
-                                <span className="stat-label">Tu rol</span>
-                                <span className="stat-value stat-value-text">{roleLabel}</span>
-                                <span className="stat-hint">{serviceMessage || 'Sesión activa'}</span>
-                            </div>
-                            <div className="caja stat-card">
-                                <span className="stat-label">Servicios disponibles</span>
-                                <span className="stat-value tabular">{effectiveServices.length}</span>
-                                <span className="stat-hint">Consulta asistencia, clases y reportes</span>
-                            </div>
-                            <div className="caja stat-card">
-                                <span className="stat-label">Deportes</span>
-                                <span className="stat-value tabular">{sportsConfig.length}</span>
-                                <span className="stat-hint">Enfoque principal: {sportsConfig[0].title.toLowerCase()}</span>
-                            </div>
-                        </div>
+                        <Dashboard token={token} />
                         <div className="caja quick-card">
                             <div>
                                 <h5>Acceso rápido</h5>
