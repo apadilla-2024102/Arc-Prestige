@@ -569,7 +569,7 @@ const App = () => {
     }
 
     const userName = user?.name || user?.username || 'Usuario'
-    const roleLabel = userRole === 'admin' ? 'Profesor / Administrador' : 'Usuario regular'
+    const roleLabel = userRole === 'admin' ? 'Profesor / Administrador' : 'Alumno'
 
     const renderRecordCard = (row, idx, limit) => {
         const title = row.name || row.className || row.studentName || row.id || `Registro ${idx + 1}`
@@ -662,9 +662,9 @@ const App = () => {
     return (
         <div className="app-shell">
             <Navbar userName={userName} onLogout={handleLogout} />
-            <Hero userName={userName} roleLabel={roleLabel} />
+            <Hero userName={userName} roleLabel={roleLabel} compact={userRole !== 'admin'} />
 
-            <section id="dashboard" className="container login-panel">
+            <section id="dashboard" className={`container login-panel ${userRole === 'admin' ? 'has-admin' : 'no-admin'}`}>
                 <div className="toolbar">
                     <Tabs tabs={mainTabs} value={mainTab} onChange={setMainTab} ariaLabel="Secciones" />
                     {userRole === 'admin' && (
@@ -680,7 +680,7 @@ const App = () => {
                             <span className="section-eyebrow">Panel</span>
                             <h2>Resumen general</h2>
                         </div>
-                        <Dashboard token={token} />
+                        <Dashboard token={token} role={userRole} filterMine={filterToCurrentUser} />
                         <div className="caja quick-card">
                             <div>
                                 <h5>Acceso rápido</h5>
