@@ -3114,3 +3114,37 @@ label,
 .login-panel > .toolbar {
     margin-bottom: 52px;
 }
+
+/* Closed mobile menu is fully hidden (not focusable, not covering content) */
+@media (max-width: 760px) {
+    .custom-navbar .navbar-nav {
+        visibility: hidden;
+        transition:
+            transform 200ms var(--ease-out),
+            opacity 150ms ease,
+            visibility 0s linear 200ms;
+    }
+
+    .custom-navbar .navbar-nav.is-open {
+        visibility: visible;
+        transition:
+            transform 200ms var(--ease-out),
+            opacity 150ms ease,
+            visibility 0s;
+    }
+}
+
+/* Mobile: the toolbar wraps to two rows only when the admin button is present */
+@media (max-width: 680px) {
+    .hero.hero-compact {
+        padding-bottom: 104px;
+    }
+
+    .login-panel.no-admin {
+        margin-top: -76px;
+    }
+}
+
+@media (max-width: 680px) {
+    .login-panel.has-admin { margin-top: -126px; }
+}

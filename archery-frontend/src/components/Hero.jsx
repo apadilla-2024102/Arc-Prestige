@@ -1,9 +1,9 @@
 import React from 'react'
 import HeroTarget from './HeroTarget'
 
-const Hero = ({ userName, roleLabel }) => {
+const Hero = ({ userName, roleLabel, compact = false }) => {
   return (
-    <section id="inicio" className="hero">
+    <section id="inicio" className={`hero ${compact ? 'hero-compact' : ''}`}>
       <div className="hero-pattern" aria-hidden="true" />
       <div className="container hero-layout">
         <div className="hero-content">

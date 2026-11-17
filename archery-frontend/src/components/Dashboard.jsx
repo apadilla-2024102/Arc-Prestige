@@ -75,7 +75,7 @@ const DONUT_W = 14
 const DONUT_C = 2 * Math.PI * DONUT_R
 const DONUT_GAP = 3
 
-const AttendanceSplit = ({ counts }) => {
+const AttendanceSplit = ({ counts, title = 'Asistencia', emptyText = 'Sin registros todavía' }) => {
   const [hover, setHover] = useState(null)
   const [drawn, setDrawn] = useState(false)
   const total = counts.present + counts.late + counts.absent
@@ -100,8 +100,8 @@ const AttendanceSplit = ({ counts }) => {
     <div className="viz-card caja viz-featured">
       <div className="viz-head">
         <div>
-          <h5>Asistencia</h5>
-          <p>{total > 0 ? `${fmt(total)} registros en total` : 'Sin registros todavía'}</p>
+          <h5>{title}</h5>
+          <p>{total > 0 ? `${fmt(total)} registros en total` : emptyText}</p>
         </div>
       </div>
 
@@ -166,7 +166,7 @@ const parseSchedule = (text) => {
   return { day: day ? day.slice(0, 3) : '', dayIndex: day ? DAY_INDEX[day] : 9, time }
 }
 
-const UpcomingClasses = ({ rows }) => {
+const UpcomingClasses = ({ rows, title = 'Calendario semanal', subtitle = 'Clases ordenadas por día y hora' }) => {
   const items = rows
     .map((r) => ({ ...r, ...parseSchedule(r.schedule) }))
     .sort((a, b) => a.dayIndex - b.dayIndex || a.time.localeCompare(b.time))
@@ -176,8 +176,8 @@ const UpcomingClasses = ({ rows }) => {
     <div className="viz-card caja">
       <div className="viz-head">
         <div>
-          <h5>Calendario semanal</h5>
-          <p>Clases ordenadas por día y hora</p>
+          <h5>{title}</h5>
+          <p>{subtitle}</p>
         </div>
       </div>
       {items.length === 0 ? (
@@ -267,7 +267,7 @@ const OccupancyMeter = ({ value }) => (
 
 /* -------------------------------------------------------------------------- */
 
-const Dashboard = ({ token }) => {
+const Dashboard = ({ token, role = 'admin', filterMine = (items) => items }) => {
   const [state, setState] = useState({ loading: true })
 
   useEffect(() => {
@@ -375,8 +375,145 @@ const Dashboard = ({ token }) => {
     }
   }, [state])
 
+  const mine = useMemo(() => {
+    if (!stats || role !== 'user') return null
+    const myIns = filterMine(state.inscriptions)
+    const myAtt = filterMine(state.attendance)
+    const counts = { present: 0, late: 0, absent: 0 }
+    myAtt.forEach((a) => { const st = statusOf(a.status); if (st) counts[st] += 1 })
+    const attTotal = counts.present + counts.late + counts.absent
+    const myClassNames = new Set(myIns.map((r) => norm(r.className || r.class)))
+    const myClasses = stats.classRows.filter((r) => myClassNames.has(norm(r.name)))
+    const open = stats.classRows.filter((r) => !r.capacity || r.enrolled < r.capacity)
+    const history = myAtt
+      .map((a, i) => ({
+        key: a._id || a.id || i,
+        date: a.date,
+        className: a.className || a.class || '—',
+        status: a.status || '—',
+      }))
+      .sort((x, y) => String(y.date).localeCompare(String(x.date)))
+    return {
+      counts,
+      attTotal,
+      rate: attTotal > 0 ? pct(counts.present + counts.late, attTotal) : 0,
+      inscriptions: myIns.length,
+      myClasses,
+      open,
+      history,
+    }
+  }, [stats, role, state, filterMine])
+
   const loading = state.loading
   const k = stats?.kpis
+
+  const fmtDate = (v) => {
+    if (!v) return '—'
+    const d = new Date(v)
+    return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })
+  }
+
+  if (role === 'user') {
+    const m = mine
+    return (
+      <div className="stats-dashboard">
+        <div className="kpi-grid">
+          <KpiTile featured icon={Users2} label="Mis inscripciones" loading={loading} value={m && <CountUp value={m.inscriptions} format={fmt} />} hint={m && (m.inscriptions ? 'Clases en las que estás inscrito' : 'Aún no te has inscrito')} />
+          <KpiTile icon={CalendarCheck} label="Mis asistencias" loading={loading} value={m && <CountUp value={m.attTotal} format={fmt} />} hint={m && `${fmt(m.counts.present)} presentes · ${fmt(m.counts.late)} tarde`} />
+          <KpiTile icon={Gauge} label="Mi asistencia" loading={loading} value={m && <CountUp value={m.rate} format={(n) => `${n}%`} />} hint={m && (m.attTotal ? 'Presentes y tarde' : 'Sin registros todavía')} />
+          <KpiTile icon={Target} label="Clases con cupo" loading={loading} value={m && <CountUp value={m.open.length} format={fmt} />} hint={m && `de ${fmt(stats.classRows.length)} clases`} />
+        </div>
+
+        {m && (
+          <>
+            <div className="viz-grid">
+              <Reveal><AttendanceSplit counts={m.counts} title="Mi asistencia" emptyText="Aún no tienes asistencias" /></Reveal>
+              <Reveal delay={60}><ClassesBySport rows={stats.sports} /></Reveal>
+              <Reveal delay={120}>
+                <UpcomingClasses
+                  rows={m.myClasses.length ? m.myClasses : stats.classRows}
+                  title={m.myClasses.length ? 'Mis clases' : 'Calendario semanal'}
+                  subtitle={m.myClasses.length ? 'Tus clases de la semana' : 'Clases disponibles por día y hora'}
+                />
+              </Reveal>
+            </div>
+
+            <Reveal className="caja table-section">
+              <div className="viz-head">
+                <div>
+                  <h5>Clases disponibles</h5>
+                  <p>Cupos libres en cada clase</p>
+                </div>
+                <span className="result-badge tabular">{m.open.length} con cupo</span>
+              </div>
+              <div className="table-responsive">
+                <table className="table nicer-table stats-table">
+                  <thead>
+                    <tr>
+                      <th>Clase</th>
+                      <th>Deporte</th>
+                      <th>Entrenador</th>
+                      <th>Horario</th>
+                      <th className="num">Cupos libres</th>
+                      <th className="meter-col">Ocupación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.classRows.map((r) => (
+                      <tr key={r.key}>
+                        <td className="strong">{r.name}</td>
+                        <td><span className="sport-tag">{r.sport}</span></td>
+                        <td>{r.coach}</td>
+                        <td className="muted">{r.schedule}</td>
+                        <td className="num">{r.capacity ? fmt(Math.max(r.capacity - r.enrolled, 0)) : '—'}</td>
+                        <td className="meter-col">{r.capacity ? <OccupancyMeter value={r.occupancy} /> : <span className="muted">—</span>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Reveal>
+
+            <Reveal className="caja table-section">
+              <div className="viz-head">
+                <div>
+                  <h5>Mi historial de asistencia</h5>
+                  <p>Tus registros más recientes</p>
+                </div>
+              </div>
+              {m.history.length > 0 ? (
+                <div className="table-responsive">
+                  <table className="table nicer-table stats-table">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Clase</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {m.history.map((h) => {
+                        const st = statusOf(h.status)
+                        return (
+                          <tr key={h.key}>
+                            <td className="tabular">{fmtDate(h.date)}</td>
+                            <td className="strong">{h.className}</td>
+                            <td><span className={st === 'present' ? 'badge-present' : st === 'late' ? 'badge-late' : st === 'absent' ? 'badge-absent' : 'badge-neutral'}>{h.status}</span></td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="empty-state">Todavía no tienes asistencias registradas.</div>
+              )}
+            </Reveal>
+          </>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="stats-dashboard">
