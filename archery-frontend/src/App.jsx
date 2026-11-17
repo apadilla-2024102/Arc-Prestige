@@ -3,6 +3,7 @@ import './styles.css'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import DataAdmin from './components/DataAdmin'
+import Tabs from './components/Tabs'
 import {
     login,
     fetchAttendanceList,
@@ -29,7 +30,14 @@ import {
     Clock,
     HelpCircle,
     MessageCircle,
+    ArrowUp,
+    X,
 } from 'lucide-react'
+
+const buildAuthServiceUrl = (path) => {
+    const base = String(import.meta.env.VITE_AUTH_SERVICE_URL || '').trim().replace(/\/$/, '')
+    return `${base}${path}`
+}
 
 const Icon = ({ name, size = 22 }) => {
     const icons = {
@@ -209,6 +217,7 @@ const App = () => {
     const [contactLoading, setContactLoading] = useState(false)
     const [pendingSection, setPendingSection] = useState(null)
     const aiInputRef = useRef(null)
+    const aiEndRef = useRef(null)
 
     const activeSport = sportsConfig.find((sport) => sport.key === selectedSport) || sportsConfig[0]
     const visibleServices = sportServiceMap[selectedSport] || archeryServices
@@ -359,7 +368,7 @@ const App = () => {
         if (typeof v === 'string' && /present|late|absent|pend/i.test(v)) {
             const lower = String(v).toLowerCase()
             const cls = lower.includes('present') ? 'badge-present' : lower.includes('late') ? 'badge-late' : lower.includes('absent') ? 'badge-absent' : 'badge-neutral'
-            return <span className={cls} style={{ padding: '6px 10px', borderRadius: 999, fontWeight: 700 }}>{v}</span>
+            return <span className={cls}>{v}</span>
         }
         return formatCell(v)
     }
@@ -385,6 +394,12 @@ const App = () => {
         studentName: 'Alumno',
         className: 'Clase',
         date: 'Fecha',
+        sport: 'Deporte',
+        coach: 'Entrenador',
+        schedule: 'Horario',
+        instructorName: 'Instructor',
+        studentEmail: 'Correo',
+        email: 'Correo',
     }
 
     const labelFor = (k) => labelMap[k] || k
@@ -535,7 +550,7 @@ const App = () => {
             setAiMessages((prev) => [...prev, { role: 'assistant', text: `Error al obtener respuesta: ${error.message || 'No disponible'}` }])
         } finally {
             setAiLoading(false)
-            window.requestAnimationFrame(() => aiInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }))
+            window.requestAnimationFrame(() => aiEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }))
         }
     }
 
@@ -543,135 +558,240 @@ const App = () => {
         setAiOpen((open) => {
             const nextOpen = !open
             if (nextOpen) {
-                setTimeout(() => aiInputRef.current?.focus(), 250)
+                setTimeout(() => aiInputRef.current?.focus({ preventScroll: true }), 120)
             }
             return nextOpen
         })
     }
 
+    const userName = user?.name || user?.username || 'Usuario'
+    const roleLabel = userRole === 'admin' ? 'Profesor / Administrador' : 'Usuario regular'
+
+    const renderRecordCard = (row, idx, limit) => {
+        const title = row.name || row.className || row.studentName || row.id || `Registro ${idx + 1}`
+        const subtitle = row.level || row.status || ''
+        return (
+            <div key={idx} className="data-card">
+                <div className="data-card-header">
+                    <h5>{title}</h5>
+                    {subtitle && <div className="data-card-sub">{subtitle}</div>}
+                </div>
+                <div className="data-card-body">
+                    {Object.entries(row).slice(0, limit).map(([k, v]) => (
+                        <div key={k} className="data-field">
+                            <div className="data-label">{labelFor(k)}</div>
+                            <div className="data-value">{renderCellValue(v)}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
+    }
+
     if (!token) {
         return (
             <div className="login-only-page">
+                <div className="login-pattern" aria-hidden="true" />
                 <div className="login-only-card">
                     <div className="login-only-header">
-                        <div>
-                            <span className="login-only-badge">Arc Prestige</span>
-                            <h2>Iniciar sesión</h2>
-                            <p>Ingresa tu correo electrónico o usuario y contraseña para continuar.</p>
-                            <div className="login-only-features">
-                                <span>Clases</span>
-                                <span>Asistencias</span>
-                                <span>Reportes</span>
-                            </div>
-                        </div>
-                        <div className="login-only-visual" aria-hidden="true">
-                            <div className="login-only-blob login-only-blob-1" />
-                            <div className="login-only-blob login-only-blob-2" />
-                        </div>
+                        <span className="login-brand" aria-hidden="true">
+                            <Target size={20} strokeWidth={1.8} />
+                        </span>
+                        <span className="login-only-badge">Arc Prestige</span>
+                        <h2>Inicia sesión</h2>
+                        <p>Ingresa tu correo o usuario y tu contraseña para continuar.</p>
                     </div>
-                    <form onSubmit={handleLogin} className="login-only-form">
-                        <div className="mb-3">
-                            <label>Correo electrónico o usuario</label>
+                    <form onSubmit={handleLogin} className="login-only-form" noValidate>
+                        <div className="field">
+                            <label htmlFor="login-user">Correo o usuario</label>
                             <input
+                                id="login-user"
                                 className="form-control"
                                 value={credentials.emailOrUsername}
                                 onChange={(e) => setCredentials((prev) => ({ ...prev, emailOrUsername: e.target.value }))}
-                                placeholder="Usuario o correo"
+                                placeholder="tu@correo.com"
+                                autoComplete="username"
                                 required
                             />
                         </div>
-                        <div className="mb-3">
-                            <label>Contraseña</label>
+                        <div className="field">
+                            <label htmlFor="login-pass">Contraseña</label>
                             <input
+                                id="login-pass"
                                 type="password"
                                 className="form-control"
                                 value={credentials.password}
                                 onChange={(e) => setCredentials((prev) => ({ ...prev, password: e.target.value }))}
-                                placeholder="Contraseña"
+                                placeholder="••••••••"
+                                autoComplete="current-password"
                                 required
                             />
                         </div>
-                        <button className="btn-modulo w-100 login-only-button" type="submit" disabled={loadingLogin}>
-                            {loadingLogin ? 'Iniciando sesión...' : 'Ingresar'}
+                        {loginError && <p className="form-error" role="alert">{loginError}</p>}
+                        <button className="btn-modulo btn-block login-only-button" type="submit" disabled={loadingLogin}>
+                            {loadingLogin ? <><span className="spinner" aria-hidden="true" />Iniciando sesión</> : 'Ingresar'}
                         </button>
-                        {loginError && <p className="text-danger mt-3">{loginError}</p>}
                     </form>
+                    <div className="login-only-features">
+                        <span>Clases</span>
+                        <span>Asistencias</span>
+                        <span>Reportes</span>
+                    </div>
                 </div>
             </div>
         )
     }
 
     return (
-        <div>
-            <Navbar />
-            <Hero />
+        <div className="app-shell">
+            <Navbar userName={userName} onLogout={handleLogout} />
+            <Hero userName={userName} roleLabel={roleLabel} />
 
             <section id="dashboard" className="container login-panel">
-                <div className="row gx-4 gy-4 justify-content-center">
-                    <div className="col-lg-8">
-                        <div className="caja premium-card">
-                            <div className="row align-items-center">
-                                <div className="col-lg-8">
-                                    <h4>Bienvenido de nuevo</h4>
-                                    <p>Hola <strong>{user?.name || user?.username || 'Usuario'}</strong>, tu centro de operaciones está listo para trabajar.</p>
-                                    <p className="text-success">{userRole === 'user' ? 'Has iniciado sesión como usuario normal.' : 'Has iniciado sesión como profesor/administrador.'}</p>
-                                </div>
-                                <div className="col-lg-4 text-lg-end">
-                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                        <button className="btn-modulo" onClick={handleLogout}>Cerrar sesión</button>
-                                        {userRole === 'admin' && (
-                                            <button className="btn-modulo" onClick={() => setShowAdmin((s) => !s)}>{showAdmin ? 'Ocultar Admin' : 'Administrar datos'}</button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="main-tabs">
-                    {mainTabs.map((tab) => (
-                        <button
-                            key={tab.key}
-                            type="button"
-                            className={mainTab === tab.key ? 'active' : ''}
-                            onClick={() => setMainTab(tab.key)}
-                        >
-                            {tab.label}
+                <div className="toolbar">
+                    <Tabs tabs={mainTabs} value={mainTab} onChange={setMainTab} ariaLabel="Secciones" />
+                    {userRole === 'admin' && (
+                        <button className={`btn-secondary-soft ${showAdmin ? 'is-active' : ''}`} onClick={() => setShowAdmin((s) => !s)}>
+                            {showAdmin ? 'Ocultar administración' : 'Administrar datos'}
                         </button>
-                    ))}
+                    )}
                 </div>
 
                 {mainTab === 'dashboard' && (
-                    <div className="dashboard-summary">
-                        <div className="row gx-4 gy-4 justify-content-center">
-                            <div className="col-md-6 col-lg-4">
-                                <div className="caja premium-card text-center">
-                                    <h5>Tu rol</h5>
-                                    <p>{userRole === 'admin' ? 'Profesor / Administrador' : 'Usuario regular'}</p>
-                                </div>
+                    <div className="dashboard-summary tab-panel" key="dashboard">
+                        <div className="stat-grid">
+                            <div className="caja stat-card">
+                                <span className="stat-label">Tu rol</span>
+                                <span className="stat-value stat-value-text">{roleLabel}</span>
+                                <span className="stat-hint">{serviceMessage || 'Sesión activa'}</span>
                             </div>
-                            <div className="col-md-6 col-lg-4">
-                                <div className="caja premium-card text-center">
-                                    <h5>Acceso rápido</h5>
-                                    <div className="dashboard-quick-buttons">
-                                        <button className="btn-modulo btn-sm" onClick={() => setMainTab('servicios')}>Ver servicios</button>
-                                        <button className="btn-modulo btn-sm" onClick={() => setMainTab('modulos')}>Ver módulos</button>
+                            <div className="caja stat-card">
+                                <span className="stat-label">Servicios disponibles</span>
+                                <span className="stat-value tabular">{effectiveServices.length}</span>
+                                <span className="stat-hint">Consulta asistencia, clases y reportes</span>
+                            </div>
+                            <div className="caja stat-card">
+                                <span className="stat-label">Deportes</span>
+                                <span className="stat-value tabular">{sportsConfig.length}</span>
+                                <span className="stat-hint">Enfoque principal: {sportsConfig[0].title.toLowerCase()}</span>
+                            </div>
+                        </div>
+                        <div className="caja quick-card">
+                            <div>
+                                <h5>Acceso rápido</h5>
+                                <p>Salta directo a lo que necesitas.</p>
+                            </div>
+                            <div className="dashboard-quick-buttons">
+                                <button className="btn-modulo" onClick={() => setMainTab('servicios')}>Ver servicios</button>
+                                <button className="btn-secondary-soft" onClick={() => setMainTab('modulos')}>Ver módulos</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {mainTab === 'modulos' && (
+                    <div className="tab-panel" key="modulos">
+                        <div id="modulos" className="titulo-principal">
+                            <h2>Módulos deportivos</h2>
+                            <p>El foco principal es el tiro con arco, pero puedes abrir otros deportes con sus propios módulos y flujos.</p>
+                        </div>
+
+                        <div id="reservas" className="sport-nav-grid">
+                            {sportsConfig.map((sport) => (
+                                <button
+                                    key={sport.key}
+                                    type="button"
+                                    aria-pressed={selectedSport === sport.key}
+                                    className={`sport-selector-card ${selectedSport === sport.key ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setSelectedSport(sport.key)
+                                        setServiceResult(null)
+                                        setServiceMessage(`${sport.title} seleccionado.`)
+                                    }}
+                                >
+                                    <div className="sport-selector-icon"><Icon name={sport.icon} size={20} /></div>
+                                    <div className="sport-selector-copy">
+                                        <h4>{sport.title}</h4>
+                                        <p>{sport.summary}</p>
                                     </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="sport-focus-card caja">
+                            <div className="sport-focus-main">
+                                <p className="sport-pill">{activeSport.title}</p>
+                                <h3>Enfoque {activeSport.title.toLowerCase()}</h3>
+                                <p>{activeSport.description}</p>
+                                <div className="sport-highlights">
+                                    {activeSport.highlights.map((item) => (
+                                        <span key={item}>{item}</span>
+                                    ))}
                                 </div>
                             </div>
+                            <div className="sport-focus-side">
+                                <h5>Módulos disponibles</h5>
+                                {activeSport.modules.map((module) => (
+                                    <div key={module.title} className="sport-module-item">
+                                        <div className="sport-module-icon"><Icon name={module.accent} size={16} /></div>
+                                        <div>
+                                            <strong>{module.title}</strong>
+                                            <p>{module.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {mainTab === 'servicios' && (
+                    <div className="servicios tab-panel" id="servicios" key="servicios">
+                        <div className="service-grid">
+                            {effectiveServices.map((service) => {
+                                const isLoading = loadingService === service.key
+                                return (
+                                    <div key={service.key} className="card-modulo service-card">
+                                        <div className="contenido">
+                                            <div className="service-badge"><Icon name={service.accent} size={18} /></div>
+                                            <h4>{service.title}</h4>
+                                            <p>{service.desc}</p>
+                                            <button
+                                                className="btn-secondary-soft service-action"
+                                                onClick={() => executeService(service)}
+                                                disabled={isLoading}
+                                                aria-busy={isLoading}
+                                            >
+                                                {isLoading ? <><span className="spinner" aria-hidden="true" />Cargando</> : service.actionLabel}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )
+                            })}
                         </div>
                     </div>
                 )}
             </section>
 
-            <div className={`ai-panel ${aiOpen ? 'ai-panel-open' : ''}`}>
+            <button
+                className="ai-launcher"
+                onClick={handleAiToggle}
+                aria-label={aiOpen ? 'Cerrar Sports AI' : 'Abrir Sports AI'}
+                aria-expanded={aiOpen}
+            >
+                <MessageCircle size={18} strokeWidth={2} />
+                <span className="ai-launcher-label">Sports AI</span>
+            </button>
+
+            <aside className={`ai-panel ${aiOpen ? 'ai-panel-open' : ''}`} aria-hidden={!aiOpen} inert={aiOpen ? undefined : ''}>
                 <div className="ai-panel-header">
                     <div>
                         <h5>Sports AI</h5>
                         <p>Tu asistente deportivo en tiempo real.</p>
                     </div>
-                    <button className="ai-close-btn" onClick={handleAiToggle}>Cerrar</button>
+                    <button className="ai-close-btn" onClick={handleAiToggle} aria-label="Cerrar asistente">
+                        <X size={16} strokeWidth={2} />
+                    </button>
                 </div>
                 <div className="ai-messages">
                     {aiMessages.map((message, index) => (
@@ -680,7 +800,12 @@ const App = () => {
                             <p>{message.text || 'Cargando...'}</p>
                         </div>
                     ))}
-                    <div ref={aiInputRef} />
+                    {aiLoading && (
+                        <div className="ai-message assistant ai-typing" aria-label="Escribiendo">
+                            <span /><span /><span />
+                        </div>
+                    )}
+                    <div ref={aiEndRef} />
                 </div>
                 <div className="ai-input-row">
                     <input
@@ -691,255 +816,129 @@ const App = () => {
                         onChange={(e) => setAiQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAiSend())}
                     />
-                    <button className="btn-modulo ai-send-btn" onClick={handleAiSend} disabled={aiLoading}>
-                        {aiLoading ? 'Pensando...' : 'Enviar'}
+                    <button className="btn-modulo ai-send-btn" onClick={handleAiSend} disabled={aiLoading || !aiQuery.trim()} aria-label="Enviar">
+                        <ArrowUp size={16} strokeWidth={2.2} />
                     </button>
                 </div>
-            </div>
-
-            <button className="ai-launcher" onClick={handleAiToggle} aria-label="Abrir Sports AI">
-                <span className="ai-launcher-icon"><MessageCircle size={24} /></span>
-                <span className="ai-launcher-label">AI</span>
-            </button>
+            </aside>
 
             {showAdmin && userRole === 'admin' && (
-                <section className="container mt-4" id="admin-panel">
-                    <div className="caja premium-card">
-                        <h4 className="mb-3">Administración de datos</h4>
-                        <DataAdmin token={token} />
-                    </div>
+                <section className="container section-gap" id="admin-panel">
+                    <DataAdmin token={token} />
                 </section>
             )}
 
-            {mainTab === 'modulos' && (
-                <>
-                    <section id="modulos" className="titulo-principal container text-center">
-                        <h2>Modulos deportivos Arc Prestige</h2>
-                        <p>El sistema está pensado para que el foco principal sea el tiro con arco, pero puedas abrir otros deportes con sus propios módulos y flujos.</p>
-                    </section>
-
-                    <section id="reservas" className="container sport-nav-grid">
-                        {sportsConfig.map((sport) => (
-                            <button
-                                key={sport.key}
-                                type="button"
-                                className={`sport-selector-card ${selectedSport === sport.key ? 'active' : ''}`}
-                                onClick={() => {
-                                    setSelectedSport(sport.key)
-                                    setServiceResult(null)
-                                    setServiceMessage(`${sport.title} seleccionado.`)
-                                }}
-                            >
-                                <div className="sport-selector-icon"><Icon name={sport.icon} size={24} /></div>
-                                <div className="sport-selector-copy">
-                                    <h4>{sport.title}</h4>
-                                    <p>{sport.summary}</p>
-                                </div>
-                            </button>
-                        ))}
-                    </section>
-
-                    <section className="container sport-focus-card">
-                        <div className="row align-items-center">
-                            <div className="col-lg-8">
-                                <p className="sport-pill">{activeSport.title}</p>
-                                <h3>Enfoque {activeSport.title.toLowerCase()}</h3>
-                                <p>{activeSport.description}</p>
-                                <div className="sport-highlights">
-                                    {activeSport.highlights.map((item) => (
-                                        <span key={item}>{item}</span>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="col-lg-4">
-                                <div className="caja premium-card">
-                                    <h5>Modulos disponibles</h5>
-                                    {activeSport.modules.map((module) => (
-                                        <div key={module.title} className="sport-module-item">
-                                            <div className="sport-module-icon"><Icon name={module.accent} size={18} /></div>
-                                            <div>
-                                                <strong>{module.title}</strong>
-                                                <p>{module.desc}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                </>
-            )}
-
-            {mainTab === 'servicios' && (
-                <section className="servicios container" id="servicios">
-                    <div className="row gx-4 gy-4">
-                        {effectiveServices.map((service) => (
-                            <div key={service.key} className="col-lg-4 col-md-6">
-                                <div className="card-modulo service-card">
-                                    <div className="contenido">
-                                        <div className="service-badge"><Icon name={service.accent} size={20} /></div>
-                                        <h4>{service.title}</h4>
-                                        <p>{service.desc}</p>
-                                        <button
-                                            className="btn-modulo"
-                                            onClick={() => executeService(service)}
-                                            disabled={loadingService === service.key}
-                                        >
-                                            {loadingService === service.key ? 'Cargando...' : service.actionLabel}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
-
-            <section className="container mt-5">
-                <div className="caja">
+            <section className="container section-gap">
+                <div className="caja result-card">
                     <div className="result-header">
                         <div>
                             <h4>Resultado del módulo</h4>
-                            <p className="text-muted">{serviceMessage || 'Selecciona un servicio después de iniciar sesión.'}</p>
+                            <p className="text-muted">{serviceMessage || 'Selecciona un servicio para ver sus datos aquí.'}</p>
                         </div>
                         <div className="result-meta">
-                            {Array.isArray(serviceResult) && <span className="result-badge">{serviceResult.length} registros</span>}
+                            {Array.isArray(serviceResult) && <span className="result-badge tabular">{serviceResult.length} registros</span>}
+                            {serviceResult && (
+                                <Tabs
+                                    size="sm"
+                                    ariaLabel="Modo de vista"
+                                    tabs={[{ key: 'formatted', label: 'Tabla' }, { key: 'cards', label: 'Tarjetas' }]}
+                                    value={viewMode === 'cards' ? 'cards' : 'formatted'}
+                                    onChange={setViewMode}
+                                />
+                            )}
                         </div>
                     </div>
                     {serviceResult ? (
-                        <div className="output-card">
-                            <div className="view-toggle">
-                                <button className="btn-modulo btn-toggle" onClick={() => setViewMode('formatted')}>Vista formateada</button>
-                                <button className="btn-modulo btn-toggle" onClick={() => setViewMode('cards')}>Tarjetas</button>
-                            </div>
-
+                        <div className="output-card" key={serviceMessage}>
                             {Array.isArray(serviceResult) ? (
-                                <div>
-                                    {viewMode === 'cards' ? (
-                                        <div className="cards-grid">
-                                            {serviceResult.map((row, idx) => {
-                                                const title = row.name || row.className || row.studentName || row.id || `Registro ${idx + 1}`
-                                                const subtitle = row.level || row.status || ''
-                                                return (
-                                                    <div key={idx} className="data-card">
-                                                        <div className="data-card-header">
-                                                            <h5>{title}</h5>
-                                                            {subtitle && <div className="data-card-sub">{subtitle}</div>}
-                                                        </div>
-                                                        <div className="data-card-body">
-                                                            {Object.entries(row).slice(0, 10).map(([k, v]) => (
-                                                                <div key={k} className="data-field">
-                                                                    <div className="data-label">{labelFor(k)}</div>
-                                                                    <div className="data-value">{renderCellValue(v)}</div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <div className="table-responsive">
-                                                <table className="table nicer-table">
-                                                    <thead>
-                                                        <tr>
-                                                            {Array.from(getColumns(serviceResult)).slice(0, 8).map((k) => (
-                                                                <th key={k}>{labelFor(k)}</th>
-                                                            ))}
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {serviceResult.map((row, i) => (
-                                                            <tr key={i}>
-                                                                {Array.from(getColumns(serviceResult)).slice(0, 8).map((k) => (
-                                                                    <td key={k}>{renderCellValue(row[k])}</td>
-                                                                ))}
-                                                            </tr>
+                                serviceResult.length === 0 ? (
+                                    <div className="empty-state">No hay registros para mostrar.</div>
+                                ) : viewMode === 'cards' ? (
+                                    <div className="cards-grid">
+                                        {serviceResult.map((row, idx) => renderRecordCard(row, idx, 10))}
+                                    </div>
+                                ) : (
+                                    <div className="table-responsive">
+                                        <table className="table nicer-table">
+                                            <thead>
+                                                <tr>
+                                                    {Array.from(getColumns(serviceResult)).slice(0, 8).map((k) => (
+                                                        <th key={k}>{labelFor(k)}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {serviceResult.map((row, i) => (
+                                                    <tr key={i}>
+                                                        {Array.from(getColumns(serviceResult)).slice(0, 8).map((k) => (
+                                                            <td key={k}>{renderCellValue(row[k])}</td>
                                                         ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )
                             ) : typeof serviceResult === 'object' && serviceResult !== null ? (
-                                <div>
-                                    {serviceResult.success !== undefined && (
-                                        <p><strong>Estado:</strong> {serviceResult.success ? 'OK' : 'Error'}</p>
-                                    )}
-                                    {serviceResult.message && <p><strong>Mensaje:</strong> {serviceResult.message}</p>}
-                                    {serviceResult.source && <p><strong>Fuente:</strong> {serviceResult.source === 'demo' ? 'Modo demostración' : serviceResult.source}</p>}
+                                <div className="result-object">
+                                    <dl className="result-summary">
+                                        {serviceResult.success !== undefined && (
+                                            <div><dt>Estado</dt><dd><span className={serviceResult.success ? 'badge-present' : 'badge-absent'}>{serviceResult.success ? 'OK' : 'Error'}</span></dd></div>
+                                        )}
+                                        {serviceResult.message && <div><dt>Mensaje</dt><dd>{serviceResult.message}</dd></div>}
+                                        {serviceResult.source && <div><dt>Fuente</dt><dd>{serviceResult.source === 'demo' ? 'Modo demostración' : serviceResult.source}</dd></div>}
+                                    </dl>
                                     {serviceResult.data && (
-                                        <div>
-                                            <p><strong>Datos:</strong></p>
-                                            {Array.isArray(serviceResult.data) ? (
-                                                viewMode === 'json' ? (
-                                                    <pre className="result-pre">{JSON.stringify(serviceResult.data, null, 2)}</pre>
-                                                ) : (
-                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-                                                        {serviceResult.data.map((row, idx) => {
-                                                            const title = row.name || row.className || row.studentName || row.id || `Registro ${idx + 1}`
-                                                            const subtitle = row.level || row.status || ''
-                                                            return (
-                                                                <div key={idx} className="data-card">
-                                                                    <div className="data-card-header">
-                                                                        <h5>{title}</h5>
-                                                                        {subtitle && <div className="data-card-sub">{subtitle}</div>}
-                                                                    </div>
-                                                                    <div className="data-card-body">
-                                                                        {Object.entries(row).slice(0, 8).map(([k, v]) => (
-                                                                            <div key={k} className="data-field">
-                                                                                <div className="data-label">{labelFor(k)}</div>
-                                                                                <div className="data-value">{renderCellValue(v)}</div>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
-                                                )
-                                            ) : typeof serviceResult.data === 'object' && serviceResult.data !== null ? (
-                                                renderObjectFields(serviceResult.data)
-                                            ) : (
+                                        Array.isArray(serviceResult.data) ? (
+                                            viewMode === 'json' ? (
                                                 <pre className="result-pre">{JSON.stringify(serviceResult.data, null, 2)}</pre>
-                                            )}
-                                        </div>
+                                            ) : (
+                                                <div className="cards-grid">
+                                                    {serviceResult.data.map((row, idx) => renderRecordCard(row, idx, 8))}
+                                                </div>
+                                            )
+                                        ) : typeof serviceResult.data === 'object' && serviceResult.data !== null ? (
+                                            renderObjectFields(serviceResult.data)
+                                        ) : (
+                                            <pre className="result-pre">{JSON.stringify(serviceResult.data, null, 2)}</pre>
+                                        )
                                     )}
-                                    {!serviceResult.success && !serviceResult.message && !serviceResult.data && (
-                                        <div>
-                                            <p><strong>Datos:</strong></p>
-                                            {renderObjectFields(serviceResult)}
-                                        </div>
-                                    )}
+                                    {!serviceResult.success && !serviceResult.message && !serviceResult.data && renderObjectFields(serviceResult)}
                                 </div>
                             ) : (
                                 <pre className="result-pre">{String(serviceResult)}</pre>
                             )}
                         </div>
-                    ) : null}
+                    ) : (
+                        <div className="empty-state">
+                            <BarChart3 size={18} strokeWidth={1.8} />
+                            Aún no has consultado ningún servicio.
+                        </div>
+                    )}
                 </div>
             </section>
 
-            <footer className="mt-5">
-                <div className="container">
-                    <div className="row">
-                        <div className="col-md-6">
-                            <h4>Quick Links</h4>
-                            <div className="quick-links">
-                                <a href="#inicio" onClick={(event) => handleQuickLinkClick(event, 'inicio')}>Inicio</a>
-                                <a href="#modulos" onClick={(event) => handleQuickLinkClick(event, 'modulos')}>Módulos</a>
-                                <a href="#reservas" onClick={(event) => handleQuickLinkClick(event, 'reservas')}>Reservas</a>
-                                <a href="#contacto" onClick={(event) => handleQuickLinkClick(event, 'contacto')}>Contacto</a>
-                            </div>
+            <footer className="site-footer">
+                <div className="container footer-grid">
+                    <div>
+                        <span className="footer-brand">Arc Prestige</span>
+                        <p className="footer-copy">Gestión deportiva para academias de tiro con arco y más.</p>
+                        <div className="quick-links">
+                            <a href="#inicio" onClick={(event) => handleQuickLinkClick(event, 'inicio')}>Inicio</a>
+                            <a href="#modulos" onClick={(event) => handleQuickLinkClick(event, 'modulos')}>Módulos</a>
+                            <a href="#reservas" onClick={(event) => handleQuickLinkClick(event, 'reservas')}>Reservas</a>
+                            <a href="#contacto" onClick={(event) => handleQuickLinkClick(event, 'contacto')}>Contacto</a>
                         </div>
-                        <div id="contacto" className="col-md-6 formulario">
-                            <h4>Contacto</h4>
-                            <form onSubmit={handleContactSubmit}>
+                    </div>
+                    <div id="contacto" className="formulario">
+                        <h4>Contacto</h4>
+                        <p className="footer-copy">¿Dudas o sugerencias? Escríbenos.</p>
+                        <form onSubmit={handleContactSubmit} noValidate>
+                            <div className="form-row-2">
                                 <input
                                     className="form-control"
                                     placeholder="Nombre"
+                                    aria-label="Nombre"
                                     value={contactForm.name}
                                     onChange={(event) => setContactForm((prev) => ({ ...prev, name: event.target.value }))}
                                     required
@@ -947,33 +946,35 @@ const App = () => {
                                 <input
                                     className="form-control"
                                     placeholder="Correo"
+                                    aria-label="Correo"
                                     type="email"
                                     value={contactForm.email}
                                     onChange={(event) => setContactForm((prev) => ({ ...prev, email: event.target.value }))}
                                     required
                                 />
-                                <textarea
-                                    className="form-control"
-                                    rows="4"
-                                    placeholder="Mensaje"
-                                    value={contactForm.message}
-                                    onChange={(event) => setContactForm((prev) => ({ ...prev, message: event.target.value }))}
-                                    required
-                                />
-                                <button className="btn-enviar mt-3" type="submit" disabled={contactLoading}>
-                                    {contactLoading ? 'Enviando...' : 'Enviar'}
+                            </div>
+                            <textarea
+                                className="form-control"
+                                rows="4"
+                                placeholder="Mensaje"
+                                aria-label="Mensaje"
+                                value={contactForm.message}
+                                onChange={(event) => setContactForm((prev) => ({ ...prev, message: event.target.value }))}
+                                required
+                            />
+                            <div className="form-actions">
+                                {contactStatus && <p className="form-status" role="status">{contactStatus}</p>}
+                                <button className="btn-modulo" type="submit" disabled={contactLoading}>
+                                    {contactLoading ? <><span className="spinner" aria-hidden="true" />Enviando</> : 'Enviar mensaje'}
                                 </button>
-                                {contactStatus && <p className="mt-3 mb-0" style={{ color: '#2f7c49' }}>{contactStatus}</p>}
-                            </form>
-                        </div>
+                            </div>
+                        </form>
                     </div>
-
-                    <div className="copyright mt-4">© Arch Prestige</div>
                 </div>
+                <div className="container copyright">© {new Date().getFullYear()} Arc Prestige</div>
             </footer>
         </div>
     )
 }
 
 export default App
-
